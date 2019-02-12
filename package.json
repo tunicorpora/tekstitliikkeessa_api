@@ -4,5 +4,8 @@
   "description": "REST API for an extended bibliographical database",
   "main": "index.js",
   "author": "Juho Härme",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
 }
