@@ -5,7 +5,16 @@
   "main": "index.js",
   "author": "Juho Härme",
   "license": "MIT",
+  "scripts": {
+    "build": "rm -rf dist/ && npx babel src -d dist",
+    "serve": "yarn run build && node dist/index.js"
+  },
   "dependencies": {
     "express": "^4.16.4"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.2.2",
+    "@babel/preset-env": "^7.3.1"
   }
 }
