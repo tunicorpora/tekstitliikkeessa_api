@@ -26,6 +26,26 @@ app.post('/author', (request, response) => {
   });
 });
 
+app.get('/author', (request, response) => {
+  Author.find({}, (err, authors) => {
+    if (err) {
+      response.status(400).send({ error: 'cannot get a list of authors' });
+    } else {
+      response.status(200).send(authors);
+    }
+  });
+});
+
+app.get('/entry', (request, response) => {
+  Entry.find({}, (err, entries) => {
+    if (err) {
+      response.status(400).send({ error: 'cannot get a list of entries' });
+    } else {
+      response.status(200).send(entries);
+    }
+  });
+});
+
 app.get('/test', (request, response) => {
   response.status(200).send('test ok');
 });
