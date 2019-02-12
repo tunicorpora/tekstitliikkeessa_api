@@ -8,14 +8,15 @@
   "scripts": {
     "build": "rm -rf dist/ && npx babel src -d dist",
     "serve": "yarn run build && dotenv node dist/index.js",
-    "watch": "dotenv nodemon -w src --exec yarn run serve",
+    "watch": "nodemon -w src --exec yarn run serve",
     "fix": "eslint src --fix",
     "lint": "eslint src",
     "docs:update": "git submodule update --init --recursive",
     "docs:serve": "dotenv ./scripts/swagger-ui/serve.sh"
   },
   "dependencies": {
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "mongoose": "^5.4.11"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
@@ -26,8 +27,11 @@
     "dotenv-export": "^2.0.0",
     "eslint": "^5.13.0",
     "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-config-prettier": "^4.0.0",
     "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-prettier": "^3.0.1",
     "http-server": "^0.11.1",
-    "nodemon": "^1.18.10"
+    "nodemon": "^1.18.10",
+    "prettier": "1.16.4"
   }
 }

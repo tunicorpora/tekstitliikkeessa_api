@@ -7,6 +7,5 @@ app.get('/test', (request, response) => {
 });
 
 app.listen(3000, 'localhost', () => {
-  // eslint-disable-next-line no-console
   console.log('listening..');
 });
