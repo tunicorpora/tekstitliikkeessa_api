@@ -28,7 +28,7 @@ entrySchema.static('addNew', async function addNew(request, response) {
   if (!oldauthor) {
     // if not found, create a new author based on the name
     const author = new Author({ name: authorName });
-    await author.save((authorErr, savedAuthor) => {
+    author.save((authorErr, savedAuthor) => {
       if (authorErr) {
         response.status(400).send({ error: 'Could not save the author' });
       }
