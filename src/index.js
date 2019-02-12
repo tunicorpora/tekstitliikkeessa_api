@@ -11,15 +11,36 @@ const app = express();
 app.use(bodyparser.urlencoded({ extended: true }));
 app.use(bodyparser.json());
 
-app.post('/entry', (request, response) => {});
+app.post('/entry', (request, response) => {
+  // Get the parameters from the request body
+  const { authorName, textType } = request.body;
+  // Look for the author in the authors db
+  // if not found, create a new author based on the name
+  const author = new Author({ name: authorName });
+  author.save((authorErr, savedAuthor) => {
+    if (authorErr) {
+      response.status(400).send({ error: 'Could not save the author' });
+    } else {
+      // eslint-disable-next-line no-underscore-dangle
+      const entry = new Entry({ author: savedAuthor._id, textType });
+      entry.save((entryErr, savedEntry) => {
+        if (entryErr) {
+          response.status(400).send({ error: 'Could not save the entry' });
+        } else {
+          response.status(200).send(savedEntry);
+        }
+      });
+    }
+  });
+});
 
 app.post('/author', (request, response) => {
   const author = new Author({ name: request.body.authorName });
-  author.save((err, success) => {
+  author.save((err, savedAuthor) => {
     if (err) {
       response.status(400).send({ error: 'Could not save the author' });
     } else {
-      response.status(200).send(success);
+      response.status(200).send(savedAuthor);
     }
   });
 });

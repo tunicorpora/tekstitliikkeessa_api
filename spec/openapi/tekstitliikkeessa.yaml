@@ -1,42 +1,42 @@
-openapi: "3.0.0"
-info: 
+openapi: '3.0.0'
+info:
   title: Tekstit liikkeessä -api
-  version: "1.0.0"
-  contact: 
+  version: '1.0.0'
+  contact:
     name: Juho Härme
     email: juho.harme@gmail.com
-servers: 
+servers:
   - url: http://localhost:3000
   - description: local dev server
 tags:
   - name: Entries
     description: Endpoints that have to do with the bibliographical entries
+  - name: Authors
+    description: Endpoints that have to do with the authors ("agents") in the db
 paths:
-  /entries:
+  /entry:
+  /author:
     post:
-      tags: Entries
-      summary: adds a new entry to the bibliographical database 
+      tags: Authors
+      summary: adds a new author to the bibliographical database
       description: todo...
       responses:
-        '201': 
-          description: the entry was succesfully added 
+        '201':
+          description: the author was succesfully added
           content:
             text/plain:
               schema:
                 type: string
-        '400': 
+        '400':
           description: invalid payload
       requestBody:
         description: the information about the new entry
         required: true
-        content: 
+        content:
           application/json:
             schema:
               properties:
-                kirjailija:
-                  type: string
-                tekstityyppi:
+                authorName:
                   type: string
             example:
-              kirjailija: Edith Södergran
-              tekstityyppi: kirja
+              authorName: Edith Södergran
