@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "build": "rm -rf dist/ && npx babel src -d dist",
-    "serve": "yarn run build && node dist/index.js"
+    "serve": "yarn run build && node dist/index.js",
+    "watch": "nodemon -w src --exec yarn run serve"
   },
   "dependencies": {
     "express": "^4.16.4"
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.2.2",
-    "@babel/preset-env": "^7.3.1"
+    "@babel/preset-env": "^7.3.1",
+    "nodemon": "^1.18.10"
   }
 }
