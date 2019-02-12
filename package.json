@@ -7,10 +7,12 @@
   "license": "MIT",
   "scripts": {
     "build": "rm -rf dist/ && npx babel src -d dist",
-    "serve": "yarn run build && node dist/index.js",
-    "watch": "nodemon -w src --exec yarn run serve",
+    "serve": "yarn run build && dotenv node dist/index.js",
+    "watch": "dotenv nodemon -w src --exec yarn run serve",
     "fix": "eslint src --fix",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "docs:update": "git submodule update --init --recursive",
+    "docs:serve": "dotenv ./scripts/swagger-ui/serve.sh"
   },
   "dependencies": {
     "express": "^4.16.4"
@@ -19,9 +21,13 @@
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.2.2",
     "@babel/preset-env": "^7.3.1",
+    "cucumber": "^5.1.0",
+    "dotenv-cli": "^1.4.0",
+    "dotenv-export": "^2.0.0",
     "eslint": "^5.13.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
+    "http-server": "^0.11.1",
     "nodemon": "^1.18.10"
   }
 }
