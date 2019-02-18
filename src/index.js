@@ -8,6 +8,15 @@ import Author from './models/author';
 const db = mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
 const app = express();
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept'
+  );
+  next();
+});
+
 app.use(bodyparser.urlencoded({ extended: true }));
 app.use(bodyparser.json());
 
