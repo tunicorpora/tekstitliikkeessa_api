@@ -28,6 +28,17 @@ app.post('/entry', (request, response) => {
   // TODO: add error handling
 });
 
+app.put('/entry/:id', (request, response) => {
+  Entry.updateOne({ _id: request.params.id }, request.body, err => {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log('success!');
+      response.status(200).send({ updated: 1 });
+    }
+  });
+});
+
 app.delete('/entry/:id', (request, response) => {
   Entry.deleteOne({ _id: request.params.id }, err => {
     if (err) {
