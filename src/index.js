@@ -46,13 +46,15 @@ app.get('/author', (request, response) => {
 });
 
 app.get('/entry', (request, response) => {
-  Entry.find({}, (err, entries) => {
-    if (err) {
-      response.status(400).send({ error: 'cannot get a list of entries' });
-    } else {
-      response.status(200).send(entries);
-    }
-  });
+  Entry.find({})
+    .populate('author', 'name')
+    .exec((err, entries) => {
+      if (err) {
+        response.status(400).send({ error: 'cannot get a list of entries' });
+      } else {
+        response.status(200).send(entries);
+      }
+    });
 });
 
 app.get('/test', (request, response) => {
