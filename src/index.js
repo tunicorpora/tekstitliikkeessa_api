@@ -16,6 +16,7 @@ app.use((req, res, next) => {
     'Access-Control-Allow-Headers',
     'Origin, X-Requested-With, Content-Type, Accept'
   );
+  res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
   next();
 });
 
@@ -24,6 +25,17 @@ app.use(bodyparser.json());
 
 app.post('/entry', (request, response) => {
   Entry.addNew(request.body);
+  // TODO: add error handling
+});
+
+app.delete('/entry/:id', (request, response) => {
+  Entry.deleteOne({ _id: request.params.id }, err => {
+    if (err) {
+      response.status(400).send({ error: 'Deleting failed.' });
+    } else {
+      response.status(200).send({ status: 'success' });
+    }
+  });
   // TODO: add error handling
 });
 
