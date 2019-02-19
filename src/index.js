@@ -1,6 +1,8 @@
 import express from 'express';
 import bodyparser from 'body-parser';
 import mongoose from 'mongoose';
+import formidable from 'formidable';
+import parseXlsx from 'excel';
 import Entry from './models/entry';
 import Author from './models/author';
 
@@ -22,6 +24,23 @@ app.use(bodyparser.json());
 
 app.post('/entry', (request, response) => {
   Entry.addNew(request, response);
+});
+
+app.post('/upload', (request, response) => {
+  const form = new formidable.IncomingForm();
+  form.parse(request);
+  // form.uploadDir = process.cwd();
+  form.on('file', (name, file) => {
+    try {
+      parseXlsx(file.path).then(data => {
+        console.log(data);
+        response.status(200).send('File upload and processing OK');
+      });
+    } catch (error) {
+      console.log(error);
+      response.status(400).send({ error: 'Could not process the file' });
+    }
+  });
 });
 
 app.post('/author', (request, response) => {
