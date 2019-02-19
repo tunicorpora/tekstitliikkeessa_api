@@ -23,23 +23,35 @@ app.use(bodyparser.urlencoded({ extended: true }));
 app.use(bodyparser.json());
 
 app.post('/entry', (request, response) => {
-  Entry.addNew(request, response);
+  Entry.addNew(request.body);
+  // TODO: add error handling
 });
 
 app.post('/upload', (request, response) => {
   const form = new formidable.IncomingForm();
   form.parse(request);
-  // form.uploadDir = process.cwd();
   form.on('file', (name, file) => {
     try {
-      parseXlsx(file.path).then(data => {
-        console.log(data);
-        response.status(200).send('File upload and processing OK');
+      parseXlsx(file.path).then(async data => {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const row of data.slice(1)) {
+          // eslint-disable-next-line no-await-in-loop
+          await Entry.addNew({
+            authorName: row[0],
+            textType: row[1],
+          });
+          console.log(`saved ${row.join(', ')}`);
+        }
+        console.log('all saved.');
+        response
+          .status(200)
+          .send(`Succesfully added ${data.length - 1} entries`);
       });
     } catch (error) {
       console.log(error);
       response.status(400).send({ error: 'Could not process the file' });
     }
+    // TODO: add error handling
   });
 });
 

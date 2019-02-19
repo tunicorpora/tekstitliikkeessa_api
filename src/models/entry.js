@@ -3,14 +3,14 @@ import Author from './author';
 
 const { ObjectId } = Schema.Types;
 
-const saveEntry = (authorId, textType, response) => {
+const saveEntry = (authorId, textType) => {
   // eslint-disable-next-line no-underscore-dangle
   const entry = new Entry({ author: authorId, textType });
   entry.save((entryErr, savedEntry) => {
     if (entryErr) {
-      response.status(400).send({ error: 'Could not save the entry' });
+      console.log('Error saving a new bibliographical entry');
     } else {
-      response.status(200).send(savedEntry);
+      console.log('Entry succesfully saved');
     }
   });
 };
@@ -20,22 +20,25 @@ const entrySchema = new Schema({
   textType: { type: String, default: '?' },
 });
 
-entrySchema.static('addNew', async function addNew(request, response) {
+entrySchema.static('addNew', async function addNew(body) {
   // Get the parameters from the request body
-  const { authorName, textType } = request.body;
+  const { authorName, textType } = body;
   // Look for the author in the authors db
   const oldauthor = await Author.findOne({ name: authorName });
   if (!oldauthor) {
     // if not found, create a new author based on the name
+    console.log('creating a new author');
     const author = new Author({ name: authorName });
     author.save((authorErr, savedAuthor) => {
       if (authorErr) {
-        response.status(400).send({ error: 'Could not save the author' });
+        console.log('error saving a new author');
       }
-      saveEntry(savedAuthor._id, textType, response);
+      console.log('author saved');
+      saveEntry(savedAuthor._id, textType);
     });
   } else {
-    saveEntry(oldauthor._id, textType, response);
+    console.log('using an existing author');
+    saveEntry(oldauthor._id, textType);
   }
 });
 
