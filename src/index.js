@@ -43,9 +43,7 @@ app.post('/upload', (request, response) => {
           console.log(`saved ${row.join(', ')}`);
         }
         console.log('all saved.');
-        response
-          .status(200)
-          .send(`Succesfully added ${data.length - 1} entries`);
+        response.status(200).send({ saved: data.length - 1 });
       });
     } catch (error) {
       console.log(error);
