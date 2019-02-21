@@ -1,3 +1,6 @@
+/*
+Usage: node scripts/add_user.js testuser testpw
+*/
 import mongoose from 'mongoose';
 import User from '../dist/models/user';
 

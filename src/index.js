@@ -1,10 +1,12 @@
 import express from 'express';
 import bodyparser from 'body-parser';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 import formidable from 'formidable';
 import parseXlsx from 'excel';
 import Entry from './models/entry';
 import Author from './models/author';
+import User from './models/user';
 
 // eslint-disable-next-line no-unused-vars
 const db = mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
@@ -23,9 +25,29 @@ app.use((req, res, next) => {
 app.use(bodyparser.urlencoded({ extended: true }));
 app.use(bodyparser.json());
 
-app.post('/entry', (request, response) => {
-  Entry.addNew(request.body);
-  // TODO: add error handling
+app.post('/signin', (request, response) => {
+  const { username, password } = request.body;
+  User.findOne({ username: username }, (err, user) => {
+    if (err || !user) {
+      return response.status(401).send({ error: 'User not found.' });
+    }
+    if (!user.authenticate(password)) {
+      return response.status(401).send({ error: 'Wrong password / username' });
+    }
+
+    const token = jwt.sign(
+      {
+        // eslint-disable-next-line no-underscore-dangle
+        _id: user._id,
+      },
+      process.env.JWT_SECRET
+    );
+
+    response.cookie('t', token, { expire: new Date() + 9999 });
+
+    // eslint-disable-next-line no-underscore-dangle
+    response.send({ token, user: { _id: user._id, username: user.username } });
+  });
 });
 
 app.put('/entry/:id', (request, response) => {
