@@ -7,10 +7,16 @@ import parseXlsx from 'excel';
 import Entry from './models/entry';
 import Author from './models/author';
 import User from './models/user';
+import expressJwt from 'express-jwt';
 
 // eslint-disable-next-line no-unused-vars
 const db = mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
 const app = express();
+
+const protectRoute = expressJwt({
+  secret: process.env.JWT_SECRET,
+  userProperty: 'auth',
+});
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -48,6 +54,11 @@ app.post('/signin', (request, response) => {
     // eslint-disable-next-line no-underscore-dangle
     response.send({ token, user: { _id: user._id, username: user.username } });
   });
+});
+
+app.get('/signout', (request, response) => {
+  response.clearCookie('t');
+  response.send({ message: 'signed out' });
 });
 
 app.put('/entry/:id', (request, response) => {
@@ -109,7 +120,7 @@ app.post('/author', (request, response) => {
   });
 });
 
-app.get('/author', (request, response) => {
+app.get('/author', protectRoute, (request, response) => {
   Author.find({}, (err, authors) => {
     if (err) {
       response.status(400).send({ error: 'cannot get a list of authors' });
