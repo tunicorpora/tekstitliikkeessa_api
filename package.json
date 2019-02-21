@@ -12,7 +12,8 @@
     "fix": "eslint src --fix",
     "lint": "eslint src",
     "docs:update": "git submodule update --init --recursive",
-    "docs:serve": "dotenv ./scripts/swagger-ui/serve.sh"
+    "docs:serve": "dotenv ./scripts/swagger-ui/serve.sh",
+    "build-scripts": "yarn build && npx babel scripts_raw/ -d scripts/ "
   },
   "dependencies": {
     "body-parser": "^1.18.3",
