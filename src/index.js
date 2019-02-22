@@ -4,10 +4,11 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import formidable from 'formidable';
 import parseXlsx from 'excel';
+import expressJwt from 'express-jwt';
+import cors from 'cors';
 import Entry from './models/entry';
 import Author from './models/author';
 import User from './models/user';
-import expressJwt from 'express-jwt';
 
 // eslint-disable-next-line no-unused-vars
 const db = mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
@@ -18,15 +19,27 @@ const protectRoute = expressJwt({
   userProperty: 'auth',
 });
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept'
-  );
-  res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
-  next();
-});
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (['http://localhost:8080'].indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+};
+app.use(cors(corsOptions));
+
+// app.use((req, res, next) => {
+//   res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
+//   res.header(
+//     'Access-Control-Allow-Headers',
+//     'Origin, X-Requested-With, Content-Type, Accept'
+//   );
+//   res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
+//   next();
+// });
 
 app.use(bodyparser.urlencoded({ extended: true }));
 app.use(bodyparser.json());
