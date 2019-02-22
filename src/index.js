@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 import express from 'express';
 import bodyparser from 'body-parser';
 import mongoose from 'mongoose';
@@ -98,11 +99,34 @@ app.delete('/entry/:id', protectRoute, (request, response) => {
 
 app.post('/upload', protectRoute, (request, response) => {
   const form = new formidable.IncomingForm();
+  const collectedAuthors = [];
   form.parse(request);
-  form.on('file', (name, file) => {
+  form.on('file', async (name, file) => {
     try {
       parseXlsx(file.path).then(async data => {
         // Grab the column names but expect the first to contain the author
+        // eslint-disable-next-line no-restricted-syntax
+        for (const row of data.slice(1)) {
+          if (collectedAuthors.indexOf(row[0]) === -1) {
+            collectedAuthors.push(row[0]);
+          }
+        }
+
+        // Scan the list of authors and insert new ones if found
+        await Promise.all(
+          collectedAuthors.map(async authorName => {
+            const oldauthor = await Author.findOne({ name: authorName });
+            if (!oldauthor) {
+              const author = await new Author({ name: authorName });
+              await author.save(authorErr => {
+                if (authorErr) {
+                  console.log('error saving a new author');
+                }
+              });
+            }
+          })
+        );
+
         const colnames = data[0].slice(1);
         // eslint-disable-next-line no-restricted-syntax
         for (const row of data.slice(1)) {
@@ -117,7 +141,6 @@ app.post('/upload', protectRoute, (request, response) => {
             authorName: row[0],
             ...cols,
           });
-          console.log(`saved ${row[0]}`);
         }
         console.log('all saved.');
         response.status(200).send({ saved: data.length - 1 });

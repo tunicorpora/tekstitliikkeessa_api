@@ -18,7 +18,7 @@ const saveEntry = (authorId, cols) => {
     if (entryErr) {
       console.log('Error saving a new bibliographical entry');
     } else {
-      console.log('Entry succesfully saved');
+      //console.log('Entry succesfully saved');
     }
   });
 };
@@ -41,14 +41,14 @@ entrySchema.static('addNew', async function addNew(body) {
     const author = new Author({ name: authorName });
     author.save((authorErr, savedAuthor) => {
       if (authorErr) {
-        console.log('error saving a new author');
+        // console.log('error saving a new author');
       } else {
-        console.log('author saved');
+        // console.log('author saved');
         saveEntry(savedAuthor._id, cols);
       }
     });
   } else {
-    console.log('using an existing author');
+    // console.log('using an existing author');
     saveEntry(oldauthor._id, cols);
   }
 });
