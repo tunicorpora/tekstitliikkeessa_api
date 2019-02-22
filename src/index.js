@@ -74,7 +74,7 @@ app.get('/signout', (request, response) => {
   response.send({ message: 'signed out' });
 });
 
-app.put('/entry/:id', (request, response) => {
+app.put('/entry/:id', protectRoute, (request, response) => {
   Entry.updateOne({ _id: request.params.id }, request.body, err => {
     if (err) {
       console.log(err);
@@ -85,7 +85,7 @@ app.put('/entry/:id', (request, response) => {
   });
 });
 
-app.delete('/entry/:id', (request, response) => {
+app.delete('/entry/:id', protectRoute, (request, response) => {
   Entry.deleteOne({ _id: request.params.id }, err => {
     if (err) {
       response.status(400).send({ error: 'Deleting failed.' });
@@ -96,7 +96,7 @@ app.delete('/entry/:id', (request, response) => {
   // TODO: add error handling
 });
 
-app.post('/upload', (request, response) => {
+app.post('/upload', protectRoute, (request, response) => {
   const form = new formidable.IncomingForm();
   form.parse(request);
   form.on('file', (name, file) => {
@@ -133,7 +133,7 @@ app.post('/author', (request, response) => {
   });
 });
 
-app.get('/author', protectRoute, (request, response) => {
+app.get('/author', (request, response) => {
   Author.find({}, (err, authors) => {
     if (err) {
       response.status(400).send({ error: 'cannot get a list of authors' });
