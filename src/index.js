@@ -102,14 +102,22 @@ app.post('/upload', protectRoute, (request, response) => {
   form.on('file', (name, file) => {
     try {
       parseXlsx(file.path).then(async data => {
+        // Grab the column names but expect the first to contain the author
+        const colnames = data[0].slice(1);
         // eslint-disable-next-line no-restricted-syntax
         for (const row of data.slice(1)) {
+          const colsRaw = colnames.map((colname, idx) => {
+            const newobj = {};
+            newobj[colname] = row[idx + 1].trim();
+            return newobj;
+          });
+          const cols = Object.assign({}, ...colsRaw);
           // eslint-disable-next-line no-await-in-loop
           await Entry.addNew({
             authorName: row[0],
-            textType: row[1],
+            ...cols,
           });
-          console.log(`saved ${row.join(', ')}`);
+          console.log(`saved ${row[0]}`);
         }
         console.log('all saved.');
         response.status(200).send({ saved: data.length - 1 });

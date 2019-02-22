@@ -1,12 +1,20 @@
 import { Schema, model } from 'mongoose';
 import Author from './author';
 
+/*
+
+ADDING new fields:
+
+db.entries.update( {}, { $set: {"uusi kenttä": ""} }, false, true)
+
+*/
+
 const { ObjectId } = Schema.Types;
 
-const saveEntry = (authorId, textType) => {
+const saveEntry = (authorId, cols) => {
   // eslint-disable-next-line no-underscore-dangle
-  const entry = new Entry({ author: authorId, textType });
-  entry.save((entryErr, savedEntry) => {
+  const entry = new Entry({ author: authorId, ...cols });
+  entry.save(entryErr => {
     if (entryErr) {
       console.log('Error saving a new bibliographical entry');
     } else {
@@ -15,14 +23,16 @@ const saveEntry = (authorId, textType) => {
   });
 };
 
-const entrySchema = new Schema({
-  author: { type: ObjectId, ref: 'Author' },
-  textType: { type: String, default: '?' },
-});
+const entrySchema = new Schema(
+  {
+    author: { type: ObjectId, ref: 'Author' },
+  },
+  { strict: false }
+);
 
 entrySchema.static('addNew', async function addNew(body) {
   // Get the parameters from the request body
-  const { authorName, textType } = body;
+  const { authorName, ...cols } = body;
   // Look for the author in the authors db
   const oldauthor = await Author.findOne({ name: authorName });
   if (!oldauthor) {
@@ -32,13 +42,14 @@ entrySchema.static('addNew', async function addNew(body) {
     author.save((authorErr, savedAuthor) => {
       if (authorErr) {
         console.log('error saving a new author');
+      } else {
+        console.log('author saved');
+        saveEntry(savedAuthor._id, cols);
       }
-      console.log('author saved');
-      saveEntry(savedAuthor._id, textType);
     });
   } else {
     console.log('using an existing author');
-    saveEntry(oldauthor._id, textType);
+    saveEntry(oldauthor._id, cols);
   }
 });
 
