@@ -10,6 +10,7 @@ import cors from 'cors';
 import Entry from './models/entry';
 import Author from './models/author';
 import User from './models/user';
+import url from 'url';
 
 // eslint-disable-next-line no-unused-vars
 const db = mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
@@ -174,21 +175,26 @@ app.get('/author', (request, response) => {
 });
 
 app.get('/entry', (request, response) => {
-  console.log('testi');
+  let filters = {};
   if (request.query.filters) {
-    const test = request.query.filters.map(filter => {
-      console.log(filter);
-    });
+    filters = {
+      $and: JSON.parse(decodeURIComponent(request.query.filters)).map(
+        filter => {
+          const fieldname =
+            filter.fieldname == 'Toimija' ? 'author' : filter.fieldname;
+          // TODO: conditio type: regex, numerical etc
+          return { [fieldname]: new RegExp(filter.value, 'i') };
+        }
+      ),
+    };
   }
-  Entry.find({})
+  console.log(filters);
+  Entry.find(filters)
     .populate('author', 'name')
     .exec((err, entries) => {
       if (err) {
-        console.log('error..');
         response.status(400).send({ error: 'cannot get a list of entries' });
       } else {
-        console.log('no errers...');
-        console.log(entries);
         response.status(200).send(entries);
       }
     });
