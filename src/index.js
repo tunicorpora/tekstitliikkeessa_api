@@ -142,7 +142,6 @@ app.post('/upload', protectRoute, (request, response) => {
             ...cols,
           });
         }
-        console.log('all saved.');
         response.status(200).send({ saved: data.length - 1 });
       });
     } catch (error) {
@@ -175,12 +174,21 @@ app.get('/author', (request, response) => {
 });
 
 app.get('/entry', (request, response) => {
+  console.log('testi');
+  if (request.query.filters) {
+    const test = request.query.filters.map(filter => {
+      console.log(filter);
+    });
+  }
   Entry.find({})
     .populate('author', 'name')
     .exec((err, entries) => {
       if (err) {
+        console.log('error..');
         response.status(400).send({ error: 'cannot get a list of entries' });
       } else {
+        console.log('no errers...');
+        console.log(entries);
         response.status(200).send(entries);
       }
     });
