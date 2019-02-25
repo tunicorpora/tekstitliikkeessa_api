@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 import express from 'express';
 import bodyparser from 'body-parser';
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import formidable from 'formidable';
 import parseXlsx from 'excel';
@@ -75,15 +75,45 @@ app.get('/signout', (request, response) => {
   response.send({ message: 'signed out' });
 });
 
-app.put('/entry/:id', protectRoute, (request, response) => {
-  Entry.updateOne({ _id: request.params.id }, request.body, err => {
-    if (err) {
-      console.log(err);
+app.put('/entry/:id', protectRoute, async (request, response) => {
+  const { authorId, ...newVals } = request.body;
+  const saveEntry = entryVals => {
+    Entry.updateOne(
+      { _id: request.params.id },
+      entryVals,
+      (err, savedEntry) => {
+        if (err) {
+          console.log(err);
+        } else {
+          response.status(200).send({ updated: savedEntry.n });
+        }
+      }
+    );
+  };
+
+  if (newVals.Toimija) {
+    // If we're editing the name of an author
+    const oldauthor = await Author.findOne({ name: newVals.Toimija });
+    if (!oldauthor) {
+      // no such name in the db: adding new
+      const author = await new Author({ name: newVals.Toimija });
+      await author.save((authorErr, savedAuthor) => {
+        if (authorErr) {
+          console.log(authorErr);
+        } else {
+          delete newVals.Toimija;
+          // eslint-disable-next-line no-underscore-dangle
+          saveEntry({ ...newVals, author: savedAuthor._id });
+        }
+      });
     } else {
-      console.log('success!');
-      response.status(200).send({ updated: 1 });
+      // eslint-disable-next-line no-underscore-dangle
+      saveEntry({ ...newVals, author: oldauthor._id });
     }
-  });
+  } else {
+    // none of the edits involves the author
+    saveEntry(newVals);
+  }
 });
 
 app.delete('/entry/:id', protectRoute, (request, response) => {
