@@ -10,7 +10,6 @@ import cors from 'cors';
 import Entry from './models/entry';
 import Author from './models/author';
 import User from './models/user';
-import url from 'url';
 
 // eslint-disable-next-line no-unused-vars
 const db = mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
@@ -174,28 +173,50 @@ app.get('/author', (request, response) => {
   });
 });
 
+app.get('/colnames', (request, response) => {
+  Entry.findOne({}, (err, entry) => {
+    if (entry) {
+      response.status(200).send(entry);
+    } else {
+      response.status(400).send({ error: 'Error finding list of columns' });
+    }
+  });
+});
+
 app.get('/entry', (request, response) => {
   let filters = {};
+  let authorFilter = '.*';
   if (request.query.filters) {
-    filters = {
-      $and: JSON.parse(decodeURIComponent(request.query.filters)).map(
-        filter => {
-          const fieldname =
-            filter.fieldname == 'Toimija' ? 'author' : filter.fieldname;
-          // TODO: conditio type: regex, numerical etc
-          return { [fieldname]: new RegExp(filter.value, 'i') };
+    const filterparams = JSON.parse(decodeURIComponent(request.query.filters))
+      .map(filter => {
+        if (filter.fieldname === 'Toimija') {
+          authorFilter = filter.value;
+          return undefined;
         }
-      ),
-    };
+        // TODO: conditio type: regex, numerical etc
+        return { [filter.fieldname]: new RegExp(filter.value, 'i') };
+      })
+      .filter(f => f !== undefined);
+    if (filterparams.length) {
+      filters = {
+        $and: filterparams,
+      };
+    }
   }
-  console.log(filters);
   Entry.find(filters)
-    .populate('author', 'name')
+    .populate({
+      path: 'author',
+      match: { name: new RegExp(authorFilter, 'i') },
+      select: 'name',
+    })
     .exec((err, entries) => {
       if (err) {
         response.status(400).send({ error: 'cannot get a list of entries' });
       } else {
-        response.status(200).send(entries);
+        const filteredEntries = entries.filter(
+          newentry => newentry.author != null
+        );
+        response.status(200).send(filteredEntries);
       }
     });
 });
