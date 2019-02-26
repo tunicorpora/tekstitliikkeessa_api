@@ -239,10 +239,9 @@ app.get('/entry', (request, response) => {
       match: { name: new RegExp(authorFilter, 'i') },
       select: 'name',
     },
-    offset: 20,
-    limit: 10,
+    page: request.query.page * 1,
+    limit: 50,
   }).then(result => {
-    console.log('heyyy');
     const filteredEntries = {
       data: result.docs.filter(newentry => newentry.author != null),
       meta: {
@@ -251,7 +250,6 @@ app.get('/entry', (request, response) => {
         pages: result.pages,
       },
     };
-    console.log(filteredEntries);
     response.status(200).send(filteredEntries);
   });
 });
