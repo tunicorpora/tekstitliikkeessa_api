@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import mongoosePaginate from 'mongoose-paginate';
 import Author from './author';
 
 /*
@@ -52,6 +53,8 @@ entrySchema.static('addNew', async function addNew(body) {
     saveEntry(oldauthor._id, cols);
   }
 });
+
+entrySchema.plugin(mongoosePaginate);
 
 const Entry = model('Entry', entrySchema);
 

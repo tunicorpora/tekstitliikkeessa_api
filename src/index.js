@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 import express from 'express';
 import bodyparser from 'body-parser';
-import mongoose, { Schema } from 'mongoose';
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import formidable from 'formidable';
 import parseXlsx from 'excel';
@@ -233,22 +233,27 @@ app.get('/entry', (request, response) => {
       };
     }
   }
-  Entry.find(filters)
-    .populate({
+  Entry.paginate(filters, {
+    populate: {
       path: 'author',
       match: { name: new RegExp(authorFilter, 'i') },
       select: 'name',
-    })
-    .exec((err, entries) => {
-      if (err) {
-        response.status(400).send({ error: 'cannot get a list of entries' });
-      } else {
-        const filteredEntries = entries.filter(
-          newentry => newentry.author != null
-        );
-        response.status(200).send(filteredEntries);
-      }
-    });
+    },
+    offset: 20,
+    limit: 10,
+  }).then(result => {
+    console.log('heyyy');
+    const filteredEntries = {
+      data: result.docs.filter(newentry => newentry.author != null),
+      meta: {
+        total: result.total,
+        page: result.page,
+        pages: result.pages,
+      },
+    };
+    console.log(filteredEntries);
+    response.status(200).send(filteredEntries);
+  });
 });
 
 app.get('/test', (request, response) => {
