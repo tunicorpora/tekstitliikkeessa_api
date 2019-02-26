@@ -19,7 +19,7 @@ const saveEntry = (authorId, cols) => {
     if (entryErr) {
       console.log('Error saving a new bibliographical entry');
     } else {
-      //console.log('Entry succesfully saved');
+      // console.log('Entry succesfully saved');
     }
   });
 };
