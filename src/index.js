@@ -213,11 +213,11 @@ app.get('/colnames', (request, response) => {
   });
 });
 
-app.get('/entry', (request, response) => {
+app.get('/entry', async (request, response) => {
   let filters = {};
-  let authorFilter = '.*';
+  let authorFilter;
   if (request.query.filters) {
-    const filterparams = JSON.parse(decodeURIComponent(request.query.filters))
+    const filterparams = JSON.parse(request.query.filters)
       .map(filter => {
         if (filter.fieldname === 'Toimija') {
           authorFilter = filter.value;
@@ -233,21 +233,35 @@ app.get('/entry', (request, response) => {
       };
     }
   }
+  if (authorFilter) {
+    // if filtering by author, let's manually query for the ids first
+    filters.author = {
+      $in: await Author.find({
+        name: new RegExp(authorFilter, 'i'),
+      }).distinct('_id'),
+    };
+  }
   Entry.paginate(filters, {
     populate: {
       path: 'author',
-      match: { name: new RegExp(authorFilter, 'i') },
       select: 'name',
     },
     page: request.query.page * 1,
     limit: 50,
   }).then(result => {
     const filteredEntries = {
-      data: result.docs.filter(newentry => newentry.author != null),
+      data: result.docs.map(doc => {
+        if (doc.author == null) {
+          console.log(doc);
+          return { ...doc, author: { name: '', _id: '' } };
+        }
+        return doc;
+      }),
       meta: {
         total: result.total,
         page: result.page,
         pages: result.pages,
+        showing: result.docs.length,
       },
     };
     response.status(200).send(filteredEntries);
