@@ -163,6 +163,22 @@ app.post('/upload', protectRoute, (request, response) => {
           const colsRaw = colnames.map((colname, idx) => {
             const newobj = {};
             newobj[colname] = row[idx + 1].trim();
+            /*
+            if (colname === 'Julkaisupv') {
+              // Treat certain  cols as  dates
+              const val = row[idx + 1];
+              let thisdate;
+              if (val * 1 < 2026 && val * 1 > 1100) {
+                thisdate = new Date(val);
+              } else if (val * 1 > 2026) {
+                thisdate = new Date((val - (25567 + 1)) * 86400 * 1000);
+              } else {
+                thisdate = null;
+              }
+              console.log(thisdate);
+              newobj[colname] = thisdate;
+            }
+          */
             return newobj;
           });
           const cols = Object.assign({}, ...colsRaw);
@@ -220,11 +236,19 @@ app.get('/entry', async (request, response) => {
     const filterparams = JSON.parse(request.query.filters)
       .map(filter => {
         if (filter.fieldname === 'Toimija') {
-          authorFilter = filter.value;
+          authorFilter = { val: filter.value, operator: filter.operator };
           return undefined;
         }
         // TODO: conditio type: regex, numerical etc
-        return { [filter.fieldname]: new RegExp(filter.value, 'i') };
+        switch (filter.operator) {
+          case '=':
+            return { [filter.fieldname]: filter.value };
+          case '>':
+            console.log({ $gt: filter.value * 1 });
+            return { [filter.fieldname]: { $gt: filter.value * 1 } };
+          default:
+            return { [filter.fieldname]: new RegExp(filter.value, 'i') };
+        }
       })
       .filter(f => f !== undefined);
     if (filterparams.length) {
@@ -235,12 +259,15 @@ app.get('/entry', async (request, response) => {
   }
   if (authorFilter) {
     // if filtering by author, let's manually query for the ids first
+    const authorCond =
+      authorFilter.operator === '='
+        ? { name: authorFilter.val }
+        : { name: new RegExp(authorFilter.val, 'i') };
     filters.author = {
-      $in: await Author.find({
-        name: new RegExp(authorFilter, 'i'),
-      }).distinct('_id'),
+      $in: await Author.find(authorCond).distinct('_id'),
     };
   }
+  console.log(filters);
   Entry.paginate(filters, {
     populate: {
       path: 'author',
@@ -252,7 +279,6 @@ app.get('/entry', async (request, response) => {
     const filteredEntries = {
       data: result.docs.map(doc => {
         if (doc.author == null) {
-          console.log(doc);
           return { ...doc, author: { name: '', _id: '' } };
         }
         return doc;
