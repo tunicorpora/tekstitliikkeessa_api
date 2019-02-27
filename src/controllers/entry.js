@@ -1,3 +1,5 @@
+import Excel from 'exceljs';
+import tempfile from 'tempfile';
 import Entry from '../models/entry';
 import Author from '../models/author';
 
@@ -16,7 +18,6 @@ async function parseFilters(request) {
           case '=':
             return { [filter.fieldname]: filter.value };
           case '>':
-            console.log({ $gt: filter.value * 1 });
             return { [filter.fieldname]: { $gt: filter.value * 1 } };
           default:
             return { [filter.fieldname]: new RegExp(filter.value, 'i') };
@@ -35,16 +36,16 @@ async function parseFilters(request) {
       authorFilter.operator === '='
         ? { name: authorFilter.val }
         : { name: new RegExp(authorFilter.val, 'i') };
-    filters = {
+    filters.author = {
       $in: await Author.find(authorCond).distinct('_id'),
     };
   }
+
   return filters;
 }
 
 const getEntries = async (request, response) => {
   const filters = await parseFilters(request);
-  console.log(filters);
   Entry.paginate(filters, {
     populate: {
       path: 'author',
@@ -71,4 +72,56 @@ const getEntries = async (request, response) => {
   });
 };
 
-export { getEntries };
+const getEntriesAsExcel = async (request, response) => {
+  const filters = await parseFilters(request);
+  Entry.find(filters)
+    .populate({
+      path: 'author',
+      select: 'name',
+    })
+    .lean()
+    .select('-_id')
+    .exec((err, entries) => {
+      if (err) {
+        response.status(400).send({ error: 'unable to get entries' });
+      } else {
+        try {
+          const workbook = new Excel.Workbook();
+          const worksheet = workbook.addWorksheet('tietokannasta');
+          let headersSet = false;
+          // eslint-disable-next-line no-restricted-syntax
+          for (const thisentry of entries) {
+            const row = { Toimija: thisentry.author.name };
+            const keys = Object.keys(thisentry).filter(
+              key => key.indexOf('_') !== 0 && key !== 'author' && key
+            );
+            // eslint-disable-next-line no-restricted-syntax
+            for (const key of keys) {
+              row[key] = thisentry[key];
+            }
+            if (!headersSet) {
+              console.log(Object.keys(row));
+              worksheet.addRow(Object.keys(row));
+              headersSet = true;
+            }
+            worksheet.addRow(Object.keys(row).map(key => row[key]));
+          }
+          const tempFilePath = tempfile('.xlsx');
+          workbook.xlsx.writeFile(tempFilePath).then(() => {
+            response.sendFile(tempFilePath, fileErr => {
+              if (fileErr) {
+                console.log(fileErr);
+              }
+            });
+          });
+        } catch (error) {
+          console.log(error);
+          response
+            .status(400)
+            .send({ error: 'unable to produce the excel file' });
+        }
+      }
+    });
+};
+
+export { getEntries, getEntriesAsExcel };

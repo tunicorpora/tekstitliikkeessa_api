@@ -10,7 +10,7 @@ import cors from 'cors';
 import Entry from './models/entry';
 import Author from './models/author';
 import User from './models/user';
-import { getEntries } from './controllers/entry';
+import { getEntries, getEntriesAsExcel } from './controllers/entry';
 
 // eslint-disable-next-line no-unused-vars
 const db = mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
@@ -231,6 +231,8 @@ app.get('/colnames', (request, response) => {
 });
 
 app.get('/entry', getEntries);
+
+app.get('/entry/excel', getEntriesAsExcel);
 
 app.get('/test', (request, response) => {
   response.status(200).send('test ok');
