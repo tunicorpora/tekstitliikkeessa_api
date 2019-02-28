@@ -22,7 +22,7 @@ const protectRoute = expressJwt({
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (['http://localhost:8080'].indexOf(origin) !== -1) {
+    if (process.env.ALLOWED_ORIGINS.split(' ').indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
