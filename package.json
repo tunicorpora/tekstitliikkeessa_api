@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "build": "rm -rf dist/ && npx babel src -d dist",
-    "serve": "yarn run build && dotenv node dist/index.js",
+    "serve": "yarn run build && dotenv pm2 start dist/index.js",
     "watch": "nodemon -w src --exec yarn run serve",
     "fix": "eslint src --fix",
     "lint": "eslint src",
@@ -43,6 +43,7 @@
     "eslint-plugin-prettier": "^3.0.1",
     "http-server": "^0.11.1",
     "nodemon": "^1.18.10",
+    "pm2": "^3.3.1",
     "prettier": "1.16.4"
   }
 }
