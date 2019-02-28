@@ -100,7 +100,6 @@ const getEntriesAsExcel = async (request, response) => {
               row[key] = thisentry[key];
             }
             if (!headersSet) {
-              console.log(Object.keys(row));
               worksheet.addRow(Object.keys(row));
               headersSet = true;
             }
@@ -108,7 +107,7 @@ const getEntriesAsExcel = async (request, response) => {
           }
           const tempFilePath = tempfile('.xlsx');
           workbook.xlsx.writeFile(tempFilePath).then(() => {
-            response.sendFile(tempFilePath, fileErr => {
+            response.download(tempFilePath, 'tietokannasta.xslx', fileErr => {
               if (fileErr) {
                 console.log(fileErr);
               }
