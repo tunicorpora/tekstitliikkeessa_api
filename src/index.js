@@ -150,6 +150,22 @@ app.get('/author', (request, response) => {
   });
 });
 
+app.delete('/colnames/:colname', (request, response) => {
+  Entry.updateMany(
+    {},
+    { $unset: { [request.params.colname]: 1 } },
+    (err, res) => {
+      if (err) {
+        response.status(400).send({ error: 'Unable to delete' });
+      } else {
+        console.log(res);
+        response.status(200).send('Column succesfully deleted.');
+      }
+    }
+  );
+  console.log(request.params.colname);
+});
+
 app.get('/colnames', (request, response) => {
   Entry.findOne({}, (err, entry) => {
     if (entry) {
