@@ -29,20 +29,10 @@ const collectAuthors = async authorCol => {
   );
 };
 
-export default (request, response) => {
-  const form = new formidable.IncomingForm();
-  form.parse(request);
-  form.on('file', async (name, file) => {
-    try {
-      parseXlsx(file.path).then(async data => {
-        await collectAuthors(data.slice(1));
-        const colnames = data[0].slice(1);
-        // eslint-disable-next-line no-restricted-syntax
-        for (const row of data.slice(1)) {
-          const colsRaw = colnames.map((colname, idx) => {
-            const newobj = {};
-            newobj[colname] = row[idx + 1].trim();
-            /*
+const parseColumns = (colname, val) => {
+  const newobj = {};
+  newobj[colname] = val.trim();
+  /*
             if (colname === 'Julkaisupv') {
               // Treat certain  cols as  dates
               const val = row[idx + 1];
@@ -58,8 +48,22 @@ export default (request, response) => {
               newobj[colname] = thisdate;
             }
           */
-            return newobj;
-          });
+  return newobj;
+};
+
+export default (request, response) => {
+  const form = new formidable.IncomingForm();
+  form.parse(request);
+  form.on('file', async (name, file) => {
+    try {
+      parseXlsx(file.path).then(async data => {
+        await collectAuthors(data.slice(1));
+        const colnames = data[0].slice(1);
+        // eslint-disable-next-line no-restricted-syntax
+        for (const row of data.slice(1)) {
+          const colsRaw = colnames.map((colname, idx) =>
+            parseColumns(colname, row[idx + 1])
+          );
           const cols = Object.assign({}, ...colsRaw);
           // eslint-disable-next-line no-await-in-loop
           await Entry.addNew({
