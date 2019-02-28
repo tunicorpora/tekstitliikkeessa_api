@@ -75,6 +75,17 @@ app.get('/signout', (request, response) => {
   response.send({ message: 'signed out' });
 });
 
+app.put('/colnames/:name/:newname', protectRoute, async (request, response) => {
+  const { name, newname } = request.params;
+  Entry.updateMany({}, { $rename: { [name]: newname } }, err => {
+    if (err) {
+      response.status(400).send({ error: 'unable to rename' });
+    } else {
+      response.status(200).send({ updatesuccess: 'renamed succesfully' });
+    }
+  });
+});
+
 app.put('/entry/:id', protectRoute, async (request, response) => {
   const { authorId, ...newVals } = request.body;
   const saveEntry = entryVals => {
@@ -150,7 +161,7 @@ app.get('/author', (request, response) => {
   });
 });
 
-app.delete('/colnames/:colname', (request, response) => {
+app.delete('/colnames/:colname', protectRoute, (request, response) => {
   Entry.updateMany(
     {},
     { $unset: { [request.params.colname]: 1 } },

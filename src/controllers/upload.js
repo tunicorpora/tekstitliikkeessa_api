@@ -95,6 +95,7 @@ export default (request, response) => {
         await addColumns(colnames);
         // eslint-disable-next-line no-restricted-syntax
         for (const row of data.slice(1)) {
+          console.log(row);
           const colsRaw = colnames.map((colname, idx) =>
             parseColumns(colname, row[idx + 1])
           );
