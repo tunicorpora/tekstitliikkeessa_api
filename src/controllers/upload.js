@@ -51,14 +51,48 @@ const parseColumns = (colname, val) => {
   return newobj;
 };
 
+const addColumns = async colnames => {
+  await Entry.findOne({})
+    .select('-_id')
+    .lean()
+    .exec(async (err, res) => {
+      if (res) {
+        const existingCols = Object.keys(res).filter(
+          key => key.indexOf('_') !== 0 && key && key !== 'author'
+        );
+        const newcols = colnames.filter(
+          col => existingCols.indexOf(col) === -1
+        );
+        if (newcols.length) {
+          await Promise.all(
+            newcols.map(async colName => {
+              await Entry.update(
+                {},
+                { $set: { [colName]: '' } },
+                (updateErr, updateRes) => {
+                  if (!updateErr) {
+                    console.log(updateRes);
+                  } else {
+                    console.log(updateErr);
+                  }
+                }
+              );
+            })
+          );
+        }
+      }
+    });
+};
+
 export default (request, response) => {
   const form = new formidable.IncomingForm();
   form.parse(request);
   form.on('file', async (name, file) => {
     try {
       parseXlsx(file.path).then(async data => {
+        const colnames = data[0].slice(1).filter(col => col);
         await collectAuthors(data.slice(1));
-        const colnames = data[0].slice(1);
+        await addColumns(colnames);
         // eslint-disable-next-line no-restricted-syntax
         for (const row of data.slice(1)) {
           const colsRaw = colnames.map((colname, idx) =>
