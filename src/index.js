@@ -22,6 +22,7 @@ const protectRoute = expressJwt({
 
 const corsOptions = {
   origin: (origin, callback) => {
+    console.log(origin);
     if (process.env.ALLOWED_ORIGINS.split(' ').indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -30,7 +31,7 @@ const corsOptions = {
   },
   credentials: true,
 };
-app.use(cors(corsOptions));
+app.use(cors());
 
 // app.use((req, res, next) => {
 //   res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
