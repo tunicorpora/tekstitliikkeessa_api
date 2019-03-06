@@ -14,7 +14,8 @@
     "lint": "eslint src",
     "docs:update": "git submodule update --init --recursive",
     "docs:serve": "dotenv ./scripts/swagger-ui/serve.sh",
-    "build-scripts": "yarn build && npx babel scripts_raw/ -d scripts/ "
+    "build-scripts": "yarn build && npx babel scripts_raw/ -d scripts/ ",
+    "test:e2e": "npx cucumber-js spec/cucumber/features --require spec/cucumber/steps/index.js --require-module @babel/register"
   },
   "dependencies": {
     "body-parser": "^1.18.3",
@@ -34,6 +35,7 @@
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.2.2",
     "@babel/preset-env": "^7.3.1",
+    "@babel/register": "^7.0.0",
     "cucumber": "^5.1.0",
     "dotenv-cli": "^1.4.0",
     "dotenv-export": "^2.0.0",
@@ -45,6 +47,7 @@
     "http-server": "^0.11.1",
     "nodemon": "^1.18.10",
     "pm2": "^3.3.1",
-    "prettier": "1.16.4"
+    "prettier": "1.16.4",
+    "superagent": "^4.1.0"
   }
 }
