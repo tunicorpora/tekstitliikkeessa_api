@@ -139,7 +139,8 @@ app.delete('/entry/:id', protectRoute, (request, response) => {
   // TODO: add error handling
 });
 
-app.post('/upload', protectRoute, Upload);
+// app.post('/upload', protectRoute, Upload);
+app.post('/upload', Upload);
 
 app.post('/author', (request, response) => {
   const author = new Author({ name: request.body.authorName });
