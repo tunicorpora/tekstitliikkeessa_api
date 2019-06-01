@@ -20,10 +20,5 @@ const authorSchema = new Schema({
   name: { type: String, default: '?', unique: true },
   publications: [publicationSchema],
 });
-
-authorSchema.post('findOne', async result => {
-  console.log(result);
-});
-
 const Author = model('Author', authorSchema);
 export default Author;

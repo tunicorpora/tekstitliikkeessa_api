@@ -1,45 +1,8 @@
-import { parallel } from 'async';
 import Mongoose from 'mongoose';
 import formidable from 'formidable';
 import parseXlsx from 'excel';
 
 import Author from '../models/author';
-import Entry from '../models/entry';
-
-const collectAuthors = async authorCol => {
-  const authorNames = [];
-  const authors = {};
-  // Grab the column names but expect the first to contain the author
-  // eslint-disable-next-line no-restricted-syntax
-  for (const row of authorCol) {
-    if (authorNames.indexOf(row[0]) === -1) {
-      authorNames.push(row[0]);
-    }
-  }
-
-  // Scan the list of authors and insert new ones if found
-  try {
-    await Promise.all(
-      authorNames.map(async authorName => {
-        const oldauthor = await Author.findOne({ name: authorName });
-        if (!oldauthor) {
-          const author = await new Author({ name: authorName });
-          authors[authorName] = author;
-          await author.save(authorErr => {
-            if (authorErr) {
-              console.log('error saving a new author');
-            }
-          });
-        } else {
-          authors[authorName] = oldauthor;
-        }
-      })
-    );
-  } catch (err) {
-    console.log('ERROR fetching authors');
-  }
-  return authors;
-};
 
 const parseColumns = (colname, val) => {
   const newobj = {};
@@ -85,15 +48,23 @@ export default (request, response) => {
           }
           publications[authorName].push(publication);
         });
-        Object.keys(publications).forEach(async name => {
-          const author = await Author.findOne({ name }).exec();
+        Object.keys(publications).forEach(async key => {
+          const author = await Author.findOne({ name: key }).exec();
           if (author) {
-            author.publications = [author.publications, ...publications[name]];
-            author.save();
+            publications[key].forEach(pub => author.publications.push(pub));
+            // author.publications = [author.publications, ...publications[key]];
+            author.save((err, res) => {
+              if (err) {
+                console.log(`Error saving ${key}: ${err.message}`);
+              } else {
+                console.log(`saved ${key}.`);
+                console.log(res);
+              }
+            });
           } else {
             const newAuthor = new Author({
-              name,
-              publications: publications[name],
+              name: key,
+              publications: publications[key],
             });
             newAuthor.save();
           }
@@ -102,8 +73,7 @@ export default (request, response) => {
       });
     } catch (error) {
       response.status(400).send({ error: 'Could not process the file' });
-      console.log('Error processing file.');
-      console.log(error);
+      console.log(`Error processing file.: ${error.message}`);
     }
     // TODO: add error handling
   });
