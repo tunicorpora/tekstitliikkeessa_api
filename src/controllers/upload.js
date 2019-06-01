@@ -26,6 +26,14 @@ const parseColumns = (colname, val) => {
   return newobj;
 };
 
+const handleAuthorError = (err, key) => {
+  if (err) {
+    console.log(`Error saving ${key}: ${err.message}`);
+  } else {
+    console.log(`saved ${key}.`);
+  }
+};
+
 export default (request, response) => {
   const form = new formidable.IncomingForm();
   form.parse(request);
@@ -41,8 +49,16 @@ export default (request, response) => {
           );
           const publication = Object.assign({}, ...colsRaw);
           publication.id = new Mongoose.Types.ObjectId();
-          publication.receptions = [];
-          publication.receptionsOf = [];
+          publication.receptions = {
+            translations: [],
+            adaptations: [],
+            other: [],
+          };
+          publication.receptionOf = {
+            translations: [],
+            adaptations: [],
+            other: [],
+          };
           if (publications[authorName] === undefined) {
             publications[authorName] = [];
           }
@@ -53,20 +69,13 @@ export default (request, response) => {
           if (author) {
             publications[key].forEach(pub => author.publications.push(pub));
             // author.publications = [author.publications, ...publications[key]];
-            author.save((err, res) => {
-              if (err) {
-                console.log(`Error saving ${key}: ${err.message}`);
-              } else {
-                console.log(`saved ${key}.`);
-                console.log(res);
-              }
-            });
+            author.save(err => handleAuthorError(err, key));
           } else {
             const newAuthor = new Author({
               name: key,
               publications: publications[key],
             });
-            newAuthor.save();
+            newAuthor.save(err => handleAuthorError(err, key));
           }
         });
         response.status(200).send('done.');

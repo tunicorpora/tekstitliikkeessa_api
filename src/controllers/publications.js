@@ -85,14 +85,19 @@ const saveLinks = async (request, response) => {
   Object.keys(receptions).forEach(async key => {
     receptions[key].forEach(async thisId => {
       const authorAndPub2 = await getPublicationAndAuthor(thisId);
-      // const rOf = authorAndPub2.publication.receptionsOf[key] || [];
-      // const rOfUpdated = [...new Set([...rOf, source])];
-      console.log(authorAndPub2.publication);
-      // console.log(rOfUpdated);
-      // authorAndPub.publication.set({
-      // 	...authorAndPub.publication,
-      // 	...{ receptionsOf: authorAndPub },
-      // });
+      const rOf = authorAndPub2.publication.receptionOf[key] || [];
+      const rOfUpdated = [...new Set([...rOf, source])];
+      authorAndPub2.publication.set({
+        ...authorAndPub2.publication,
+        ...{ receptionOf: rOfUpdated },
+      });
+      authorAndPub2.author.save((err, res) => {
+        if (err) {
+          console.log(err.message);
+        } else {
+          console.log('receptionsOf saved.');
+        }
+      });
     });
   });
   // console.log(request.body);
