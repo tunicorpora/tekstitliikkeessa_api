@@ -45,31 +45,41 @@ async function parseFilters(request) {
 }
 
 const getEntries = async (request, response) => {
-  const filters = await parseFilters(request);
-  Entry.paginate(filters, {
-    populate: {
-      path: 'author',
-      select: 'name',
-    },
-    page: request.query.page * 1,
-    limit: 50,
-  }).then(result => {
-    const filteredEntries = {
-      data: result.docs.map(doc => {
-        if (doc.author == null) {
-          return { ...doc, author: { name: '', _id: '' } };
-        }
-        return doc;
-      }),
-      meta: {
-        total: result.total,
-        page: result.page,
-        pages: result.pages,
-        showing: result.docs.length,
-      },
-    };
-    response.status(200).send(filteredEntries);
+  // const filters = await parseFilters(request);
+  Author.aggregate([
+    { $unwind: '$publications' },
+    { $group: { _id: null, content: { $addToSet: '$publications' } } },
+  ]).then((result, err) => {
+    if (!err) {
+      response.status(200).send(result[0].content);
+    } else {
+      console.log(err);
+    }
   });
+  // Entry.paginate(filters, {
+  //   populate: {
+  //     path: 'author',
+  //     select: 'name',
+  //   },
+  //   page: request.query.page * 1,
+  //   limit: 50,
+  // }).then(result => {
+  //   const filteredEntries = {
+  //     data: result.docs.map(doc => {
+  //       if (doc.author == null) {
+  //         return { ...doc, author: { name: '', _id: '' } };
+  //       }
+  //       return doc;
+  //     }),
+  //     meta: {
+  //       total: result.total,
+  //       page: result.page,
+  //       pages: result.pages,
+  //       showing: result.docs.length,
+  //     },
+  //   };
+  //    response.status(200).send(filteredEntries);
+  //  });
 };
 
 const getEntriesAsExcel = async (request, response) => {

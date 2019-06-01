@@ -1,15 +1,21 @@
 /* eslint-disable no-await-in-loop */
-import express from 'express';
 import bodyparser from 'body-parser';
-import mongoose from 'mongoose';
-import jwt from 'jsonwebtoken';
-import expressJwt from 'express-jwt';
 import cors from 'cors';
-import Entry from './models/entry';
-import Author from './models/author';
-import User from './models/user';
+import express from 'express';
+import expressJwt from 'express-jwt';
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
+
 import { getEntries, getEntriesAsExcel } from './controllers/entry';
+import {
+  getPublicationTitles,
+  getPublications,
+  saveLinks,
+} from './controllers/publications';
+import Author from './models/author';
+import Entry from './models/entry';
 import Upload from './controllers/upload';
+import User from './models/user';
 
 // eslint-disable-next-line no-unused-vars
 const db = mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
@@ -48,7 +54,7 @@ app.use(bodyparser.json());
 
 app.post('/signin', (request, response) => {
   const { username, password } = request.body;
-  User.findOne({ username: username }, (err, user) => {
+  User.findOne({ username }, (err, user) => {
     if (err || !user) {
       return response.status(401).send({ error: 'User not found.' });
     }
@@ -190,6 +196,10 @@ app.get('/colnames', (request, response) => {
 });
 
 app.get('/entry', getEntries);
+app.get('/publications', getPublications);
+app.get('/publication_titles', getPublicationTitles);
+
+app.post('/savelinks', saveLinks);
 
 app.get('/entry/excel', getEntriesAsExcel);
 
