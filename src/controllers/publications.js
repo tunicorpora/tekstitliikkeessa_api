@@ -109,19 +109,24 @@ const saveLinks = async (request, response) => {
 
 const getReceptions = async (request, response) => {
   const { id } = request.params;
-  console.log('getting');
   const pub = await getPublicationAndAuthor(id);
-  console.log('got it');
-  const { translations } = pub.publication.receptions;
-  if (Array.isArray(translations)) {
-    console.log('starting');
-    Promise.all(translations.map(trId => getPublicationAndAuthor(trId))).then(
-      values => {
-        response.status(201).send(values.map(both => both.publication));
-      }
+  let promises = [];
+  Object.keys(pub.publication.receptions).forEach(key => {
+    promises = [
+      ...promises,
+      ...pub.publication.receptions[key].map(trId =>
+        getPublicationAndAuthor(trId)
+      ),
+    ];
+  });
+  Promise.all(promises).then(values => {
+    response.status(201).send(
+      values.map(both => ({
+        ...both.publication._doc,
+        ...{ author: both.author.name },
+      }))
     );
-    // Promise.all(translations.map())
-  }
+  });
 };
 
 export { getPublications, getPublicationTitles, saveLinks, getReceptions };
