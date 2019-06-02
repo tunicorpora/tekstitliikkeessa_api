@@ -6,6 +6,7 @@ import expressJwt from 'express-jwt';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
+import { getAuthor, getAuthorNames } from './controllers/author';
 import { getEntries, getEntriesAsExcel } from './controllers/entry';
 import {
   getPublicationTitles,
@@ -198,6 +199,8 @@ app.get('/colnames', (request, response) => {
 app.get('/entry', getEntries);
 app.get('/publications', getPublications);
 app.get('/publication_titles', getPublicationTitles);
+app.get('/authornames', getAuthorNames);
+app.get('/author/:name', getAuthor);
 
 app.post('/savelinks', saveLinks);
 
