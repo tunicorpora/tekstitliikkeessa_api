@@ -3,8 +3,12 @@ import Author from '../models/author';
 
 const getPublications = async (request, response) => {
   const title = new RegExp(request.query.search);
+  const { id } = request.params;
+  const condition = id
+    ? { $match: { 'publications._id': Mongoose.Types.ObjectId(id) } }
+    : { $match: { 'publications.title': { $regex: title } } };
   Author.aggregate([
-    { $match: { 'publications.title': { $regex: title } } },
+    condition,
     { $unwind: '$publications' },
     {
       $group: {
@@ -103,4 +107,21 @@ const saveLinks = async (request, response) => {
   // console.log(request.body);
 };
 
-export { getPublications, getPublicationTitles, saveLinks };
+const getReceptions = async (request, response) => {
+  const { id } = request.params;
+  console.log('getting');
+  const pub = await getPublicationAndAuthor(id);
+  console.log('got it');
+  const { translations } = pub.publication.receptions;
+  if (Array.isArray(translations)) {
+    console.log('starting');
+    Promise.all(translations.map(trId => getPublicationAndAuthor(trId))).then(
+      values => {
+        response.status(201).send(values.map(both => both.publication));
+      }
+    );
+    // Promise.all(translations.map())
+  }
+};
+
+export { getPublications, getPublicationTitles, saveLinks, getReceptions };

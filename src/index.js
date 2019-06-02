@@ -11,6 +11,7 @@ import { getEntries, getEntriesAsExcel } from './controllers/entry';
 import {
   getPublicationTitles,
   getPublications,
+  getReceptions,
   saveLinks,
 } from './controllers/publications';
 import Author from './models/author';
@@ -197,6 +198,8 @@ app.get('/colnames', (request, response) => {
 });
 
 app.get('/entry', getEntries);
+app.get('/receptions/:id', getReceptions);
+app.get('/publications/:id', getPublications);
 app.get('/publications', getPublications);
 app.get('/publication_titles', getPublicationTitles);
 app.get('/authornames', getAuthorNames);
