@@ -27,7 +27,9 @@ const getPublications = async (request, response) => {
             }
           })
         );
-        response.status(200).send(mapped);
+        response
+          .status(200)
+          .send(id ? mapped.find(pub => pub._id == id) : mapped);
       } else {
         response.status(200).send([]);
       }
