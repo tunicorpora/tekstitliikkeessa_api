@@ -1,7 +1,9 @@
 import Excel from 'exceljs';
 import tempfile from 'tempfile';
-import Entry from '../models/entry';
+
+import { getPublicationAndAuthor } from './publications';
 import Author from '../models/author';
+import Entry from '../models/entry';
 
 async function parseFilters(request) {
   let filters = {};
@@ -133,4 +135,21 @@ const getEntriesAsExcel = async (request, response) => {
     });
 };
 
-export { getEntries, getEntriesAsExcel };
+const editEntry = async (request, response) => {
+  const { id } = request.params;
+  const pub = await getPublicationAndAuthor(id);
+  pub.publication.set({
+    ...pub.publication,
+    ...request.body,
+  });
+  pub.author.save(err => {
+    if (err) {
+      console.log(err.message);
+    } else {
+      response.status(200).send({ status: 'ok' });
+      console.log('edits saved.');
+    }
+  });
+};
+
+export { getEntries, getEntriesAsExcel, editEntry };

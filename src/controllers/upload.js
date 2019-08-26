@@ -78,7 +78,8 @@ export default (request, response) => {
             newAuthor.save(err => handleAuthorError(err, key));
           }
         });
-        response.status(200).send('done.');
+        console.log(publications.length);
+        response.status(200).send({ uploadStatus: { saved: data.length } });
       });
     } catch (error) {
       response.status(400).send({ error: 'Could not process the file' });

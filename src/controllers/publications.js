@@ -76,7 +76,6 @@ const getPublicationAndAuthor = async thisId => {
 const saveLinks = async (request, response) => {
   const { body } = request;
   const { source, receptions } = body;
-  console.log('waiting...');
   const authorAndPub = await getPublicationAndAuthor(source);
   authorAndPub.publication.set({
     ...authorAndPub.publication,
@@ -84,7 +83,6 @@ const saveLinks = async (request, response) => {
   });
   try {
     await authorAndPub.author.save();
-    console.log('Author saved!');
   } catch (err) {
     console.log('Error saving author');
   }
@@ -131,4 +129,10 @@ const getReceptions = async (request, response) => {
   });
 };
 
-export { getPublications, getPublicationTitles, saveLinks, getReceptions };
+export {
+  getPublications,
+  getPublicationTitles,
+  saveLinks,
+  getReceptions,
+  getPublicationAndAuthor,
+};

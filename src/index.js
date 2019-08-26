@@ -6,9 +6,10 @@ import expressJwt from 'express-jwt';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
+import { editEntry, getEntries, getEntriesAsExcel } from './controllers/entry';
 import { getAuthor, getAuthorNames } from './controllers/author';
-import { getEntries, getEntriesAsExcel } from './controllers/entry';
 import {
+  getPublicationAndAuthor,
   getPublicationTitles,
   getPublications,
   getReceptions,
@@ -30,7 +31,6 @@ const protectRoute = expressJwt({
 
 const corsOptions = {
   origin: (origin, callback) => {
-    console.log(origin);
     if (process.env.ALLOWED_ORIGINS.split(' ').indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -39,17 +39,17 @@ const corsOptions = {
   },
   credentials: true,
 };
-app.use(cors());
+app.use(cors(corsOptions));
 
-// app.use((req, res, next) => {
-//   res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
-//   res.header(
-//     'Access-Control-Allow-Headers',
-//     'Origin, X-Requested-With, Content-Type, Accept'
-//   );
-//   res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
-//   next();
-// });
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept'
+  );
+  res.header('Access-Control-Allow-Methods', 'GET, PUT, POST, DELETE');
+  next();
+});
 
 app.use(bodyparser.urlencoded({ extended: true }));
 app.use(bodyparser.json());
@@ -95,55 +95,21 @@ app.put('/colnames/:name/:newname', protectRoute, async (request, response) => {
   });
 });
 
-app.put('/entry/:id', protectRoute, async (request, response) => {
-  const { authorId, ...newVals } = request.body;
-  const saveEntry = entryVals => {
-    Entry.updateOne(
-      { _id: request.params.id },
-      entryVals,
-      (err, savedEntry) => {
-        if (err) {
-          console.log(err);
-        } else {
-          response.status(200).send({ updated: savedEntry.n });
-        }
+app.delete('/entry/:id', protectRoute, async (request, response) => {
+  const authorAndPub = await getPublicationAndAuthor(request.params.id);
+  if (authorAndPub.author) {
+    await authorAndPub.publication.remove();
+    authorAndPub.author.save(err => {
+      if (err) {
+        console.log('error deleting');
+        response.status(400).send({ status: 'error deleting' });
+        // console.log(err.message);
+      } else {
+        response.status(200).send({ status: 'ok' });
+        console.log('deleted');
       }
-    );
-  };
-
-  if (newVals.Toimija) {
-    // If we're editing the name of an author
-    const oldauthor = await Author.findOne({ name: newVals.Toimija });
-    if (!oldauthor) {
-      // no such name in the db: adding new
-      const author = await new Author({ name: newVals.Toimija });
-      await author.save((authorErr, savedAuthor) => {
-        if (authorErr) {
-          console.log(authorErr);
-        } else {
-          delete newVals.Toimija;
-          // eslint-disable-next-line no-underscore-dangle
-          saveEntry({ ...newVals, author: savedAuthor._id });
-        }
-      });
-    } else {
-      // eslint-disable-next-line no-underscore-dangle
-      saveEntry({ ...newVals, author: oldauthor._id });
-    }
-  } else {
-    // none of the edits involves the author
-    saveEntry(newVals);
+    });
   }
-});
-
-app.delete('/entry/:id', protectRoute, (request, response) => {
-  Entry.deleteOne({ _id: request.params.id }, err => {
-    if (err) {
-      response.status(400).send({ error: 'Deleting failed.' });
-    } else {
-      response.status(200).send({ status: 'success' });
-    }
-  });
   // TODO: add error handling
 });
 
@@ -171,32 +137,7 @@ app.get('/author', (request, response) => {
   });
 });
 
-app.delete('/colnames/:colname', protectRoute, (request, response) => {
-  Entry.updateMany(
-    {},
-    { $unset: { [request.params.colname]: 1 } },
-    (err, res) => {
-      if (err) {
-        response.status(400).send({ error: 'Unable to delete' });
-      } else {
-        console.log(res);
-        response.status(200).send('Column succesfully deleted.');
-      }
-    }
-  );
-  console.log(request.params.colname);
-});
-
-app.get('/colnames', (request, response) => {
-  Entry.findOne({}, (err, entry) => {
-    if (entry) {
-      response.status(200).send(entry);
-    } else {
-      response.status(400).send({ error: 'Error finding list of columns' });
-    }
-  });
-});
-
+app.put('/entry/:id', protectRoute, editEntry);
 app.get('/entry', getEntries);
 app.get('/receptions/:id', getReceptions);
 app.get('/publications/:id', getPublications);
