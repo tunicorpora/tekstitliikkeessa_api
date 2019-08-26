@@ -8,21 +8,24 @@ import Entry from '../models/entry';
 async function parseFilters(request) {
   let filters = {};
   let authorFilter;
+  console.log(request.query.filters);
   if (request.query.filters) {
     const filterparams = JSON.parse(request.query.filters)
       .map(filter => {
-        if (filter.fieldname === 'Toimija') {
-          authorFilter = { val: filter.value, operator: filter.operator };
-          return undefined;
-        }
-        // TODO: conditio type: regex, numerical etc
         switch (filter.operator) {
           case '=':
-            return { [filter.fieldname]: filter.value };
+            return { [`publications.${filter.fieldname}`]: filter.value };
           case '>':
-            return { [filter.fieldname]: { $gt: filter.value * 1 } };
+            return {
+              [`publications.${filter.fieldname}`]: { $gt: filter.value * 1 },
+            };
           default:
-            return { [filter.fieldname]: new RegExp(filter.value, 'i') };
+            return {
+              [`publications.${filter.fieldname}`]: new RegExp(
+                filter.value,
+                'i'
+              ),
+            };
         }
       })
       .filter(f => f !== undefined);
@@ -47,13 +50,19 @@ async function parseFilters(request) {
 }
 
 const getEntries = async (request, response) => {
-  // const filters = await parseFilters(request);
+  const filters = await parseFilters(request);
+  console.log(filters);
   Author.aggregate([
+    { $match: filters },
     { $unwind: '$publications' },
     { $group: { _id: null, content: { $addToSet: '$publications' } } },
   ]).then((result, err) => {
     if (!err) {
-      response.status(200).send(result[0].content);
+      if (result[0]) {
+        response.status(200).send(result[0].content);
+      } else {
+        response.status(200).send([]);
+      }
     } else {
       console.log(err);
     }
