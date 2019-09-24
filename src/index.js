@@ -21,7 +21,9 @@ import Upload from './controllers/upload';
 import User from './models/user';
 
 // eslint-disable-next-line no-unused-vars
-const db = mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true });
+const db = mongoose.connect('mongodb://telimongo:27017/teli', {
+  useNewUrlParser: true,
+});
 const app = express();
 
 const protectRoute = expressJwt({
@@ -31,6 +33,7 @@ const protectRoute = expressJwt({
 
 const corsOptions = {
   origin: (origin, callback) => {
+    // TODO: DEV only
     if (process.env.ALLOWED_ORIGINS.split(' ').indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -154,6 +157,6 @@ app.get('/test', (request, response) => {
   response.status(200).send('test ok');
 });
 
-app.listen(3000, 'localhost', () => {
+app.listen(3000, '0.0.0.0', () => {
   console.log('listening..');
 });

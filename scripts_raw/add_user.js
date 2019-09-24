@@ -4,7 +4,7 @@ Usage: node scripts/add_user.js testuser testpw
 import mongoose from 'mongoose';
 import User from '../dist/models/user';
 
-const db = mongoose.connect('mongodb://localhost/tekstitliikkeessa', {
+const db = mongoose.connect('mongodb://telimongo:27017/teli', {
   useNewUrlParser: true,
 });
 
