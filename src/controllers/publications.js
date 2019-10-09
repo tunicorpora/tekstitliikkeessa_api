@@ -73,9 +73,7 @@ const getPublicationAndAuthor = async thisId => {
   }
 };
 
-const saveLinks = async (request, response) => {
-  const { body } = request;
-  const { source, receptions } = body;
+const saveLinksRaw = async (source, receptions) => {
   const authorAndPub = await getPublicationAndAuthor(source);
   authorAndPub.publication.set({
     ...authorAndPub.publication,
@@ -104,7 +102,12 @@ const saveLinks = async (request, response) => {
       });
     });
   });
-  // console.log(request.body);
+};
+
+const saveLinks = async (request, response) => {
+  const { body } = request;
+  const { source, receptions } = body;
+  saveLinksRaw(source, receptions);
 };
 
 const getReceptions = async (request, response) => {
@@ -133,6 +136,7 @@ export {
   getPublications,
   getPublicationTitles,
   saveLinks,
+  saveLinksRaw,
   getReceptions,
   getPublicationAndAuthor,
 };
