@@ -1,9 +1,12 @@
+/* eslint no-restricted-syntax: 0 */
+/* eslint no-await-in-loop: 0 */
+/* eslint no-underscore-dangle: 0 */
 import Mongoose from 'mongoose';
 import formidable from 'formidable';
 import parseXlsx from 'excel';
 
-import Author from '../models/author';
-import saveLinksRaw from './publications';
+import Author, { Publication } from '../models/author';
+import { saveLinksRaw, getPublicationAndAuthor } from './publications';
 
 const parseColumns = (colname, val) => {
   const newobj = {};
@@ -27,14 +30,6 @@ const parseColumns = (colname, val) => {
   return newobj;
 };
 
-const handleAuthorError = (err, key) => {
-  if (err) {
-    console.log(`Error saving ${key}: ${err.message}`);
-  } else {
-    console.log(`saved ${key}.`);
-  }
-};
-
 const getPublications = (data, groupingKey) => {
   const colnames = data[0].filter(col => col);
   const authornameIdx = colnames.findIndex(
@@ -50,7 +45,7 @@ const getPublications = (data, groupingKey) => {
         .map((colname, idx) => parseColumns(colname, row[idx]))
         .filter(rawCol => !Object.keys(rawCol).includes(groupingKey));
       const publication = Object.assign({}, ...colsRaw);
-      publication.id = new Mongoose.Types.ObjectId();
+      publication.tempId = new Mongoose.Types.ObjectId();
       publication.receptions = {
         translations: [],
         adaptations: [],
@@ -64,27 +59,27 @@ const getPublications = (data, groupingKey) => {
       if (publications[authorName] === undefined) {
         publications[authorName] = [];
       }
-      publications[authorName].push(publication);
+      publications[authorName].push(new Publication({ ...publication }));
     });
   return publications;
 };
 
 const extractAuthorsFromPublications = async publications => {
-  Object.keys(publications)
-    .filter(key => key)
-    .forEach(async key => {
-      const author = await Author.findOne({ name: key }).exec();
-      if (author) {
-        publications[key].forEach(pub => author.publications.push(pub));
-        author.save(err => handleAuthorError(err, key));
-      } else {
-        const newAuthor = new Author({
-          name: key,
-          publications: publications[key],
-        });
-        newAuthor.save(err => handleAuthorError(err, key));
-      }
-    });
+  for (const keyval of Object.entries(publications)) {
+    const author =
+      (await Author.findOne({ name: keyval[0] }).exec()) ||
+      new Author({
+        name: keyval[0],
+        publications: [],
+      });
+    keyval[1].forEach(pub => author.publications.push(pub));
+    try {
+      const savedAuthor = await author.save();
+      console.log(`author saved (${savedAuthor._id})`);
+    } catch (e) {
+      console.log(`Error saving author ${keyval[0]}: ${e}`);
+    }
+  }
 };
 
 const upload = (request, response) => {
@@ -104,8 +99,8 @@ const upload = (request, response) => {
   });
 };
 
-const getReceptionData = publications => {
-  const red = Object.values(publications)
+const getReceptionData = publications =>
+  Object.values(publications)
     .reduce((prev, cur) => [...prev, ...Object.values(cur)], [])
     .reduce((allPubs, curPub) => {
       const rType = `${curPub.reception_type}s`;
@@ -117,11 +112,12 @@ const getReceptionData = publications => {
       };
       return {
         ...allPubs,
-        [target]: { ...receptions, [rType]: [...receptions[rType], curPub.id] },
+        [target]: {
+          ...receptions,
+          [rType]: [...receptions[rType], curPub._id],
+        },
       };
     }, {});
-  console.log(red);
-};
 
 const uploadReceptions = (request, response) => {
   const form = new formidable.IncomingForm();
@@ -131,9 +127,15 @@ const uploadReceptions = (request, response) => {
       const data = await parseXlsx(file.path).catch(err => console.log(err));
       const publications = getPublications(data, 'author');
       const receptionData = getReceptionData(publications);
-      //await extractAuthorsFromPublications(publications);
-      //
-      //
+      await extractAuthorsFromPublications(publications);
+      Object.entries(receptionData).forEach(async keyval => {
+        try {
+          saveLinksRaw(keyval[0], keyval[1], true);
+        } catch (err) {
+          console.log('error saving receptions');
+          console.log(err);
+        }
+      });
     } catch (error) {
       console.log(error);
       response.status(400).send({ error: 'Unable to parse xlsx' });

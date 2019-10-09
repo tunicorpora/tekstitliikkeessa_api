@@ -117,8 +117,8 @@ app.delete('/entry/:id', protectRoute, async (request, response) => {
 });
 
 // app.post('/upload', protectRoute, Upload);
-app.post('/upload', upload);
 app.post('/upload_receptions', uploadReceptions);
+app.post('/upload', upload);
 
 app.post('/author', (request, response) => {
   const author = new Author({ name: request.body.authorName });

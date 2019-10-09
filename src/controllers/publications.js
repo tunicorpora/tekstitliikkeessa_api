@@ -61,19 +61,24 @@ const getPublicationTitles = async (request, response) => {
 
 const getPublicationAndAuthor = async thisId => {
   try {
+    console.log('OKK???');
     const author = await Author.findOne({
       'publications._id': Mongoose.Types.ObjectId(thisId),
     }).exec();
+    if (!author) {
+      console.log(`No author found, aborting`);
+      return null;
+    }
     return {
       publication: author.publications.id(Mongoose.Types.ObjectId(thisId)),
       author,
     };
   } catch (err) {
-    console.log('error getting publication');
+    console.log(`unable to retrieve the author of the publication ${thisId}`);
   }
 };
 
-const saveLinksRaw = async (source, receptions) => {
+const saveLinksRaw = async (source, receptions, oneWay = false) => {
   const authorAndPub = await getPublicationAndAuthor(source);
   authorAndPub.publication.set({
     ...authorAndPub.publication,
@@ -83,6 +88,9 @@ const saveLinksRaw = async (source, receptions) => {
     await authorAndPub.author.save();
   } catch (err) {
     console.log('Error saving author');
+  }
+  if (oneWay) {
+    console.log('one way!');
   }
   Object.keys(receptions).forEach(async key => {
     receptions[key].forEach(async thisId => {

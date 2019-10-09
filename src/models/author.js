@@ -2,6 +2,9 @@ import { Schema, model } from 'mongoose';
 
 const publicationSchema = new Schema({
   title: { type: String },
+  tempId: { type: String },
+  reception_type: { type: String },
+  target: { type: String },
   'english title': { type: String },
   'document type': { type: String },
   Genre: { type: String },
@@ -24,4 +27,6 @@ const authorSchema = new Schema({
   publications: [publicationSchema],
 });
 const Author = model('Author', authorSchema);
+const Publication = model('Publication', publicationSchema);
+export { Publication };
 export default Author;
