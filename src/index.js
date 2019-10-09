@@ -17,7 +17,7 @@ import {
 } from './controllers/publications';
 import Author from './models/author';
 import Entry from './models/entry';
-import Upload from './controllers/upload';
+import { upload, uploadReceptions } from './controllers/upload';
 import User from './models/user';
 
 // eslint-disable-next-line no-unused-vars
@@ -117,7 +117,8 @@ app.delete('/entry/:id', protectRoute, async (request, response) => {
 });
 
 // app.post('/upload', protectRoute, Upload);
-app.post('/upload', Upload);
+app.post('/upload', upload);
+app.post('/upload_receptions', uploadReceptions);
 
 app.post('/author', (request, response) => {
   const author = new Author({ name: request.body.authorName });
@@ -155,6 +156,16 @@ app.get('/entry/excel', getEntriesAsExcel);
 
 app.get('/test', (request, response) => {
   response.status(200).send('test ok');
+});
+
+app.delete('/author', protectRoute, async (_, response) => {
+  Author.deleteMany({}, err => {
+    if (err) {
+      console.log(err);
+      response.status(400).send({ error: 'unable to delete' });
+    }
+    response.status(200).send({ status: 'succesfully deleted' });
+  });
 });
 
 app.listen(3000, '0.0.0.0', () => {

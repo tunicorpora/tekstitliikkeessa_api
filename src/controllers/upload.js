@@ -34,7 +34,7 @@ const handleAuthorError = (err, key) => {
   }
 };
 
-export default (request, response) => {
+const upload = (request, response) => {
   const form = new formidable.IncomingForm();
   form.parse(request);
   form.on('file', async (name, file) => {
@@ -88,3 +88,19 @@ export default (request, response) => {
     // TODO: add error handling
   });
 };
+
+const uploadReceptions = (request, response) => {
+  const form = new formidable.IncomingForm();
+  upload(request);
+  form.parse(request);
+  form.on('file', async (_, file) => {
+    try {
+      const data = await parseXlsx(file.path).catch(err => console.log(err));
+      console.log('heheheeiiiiii');
+    } catch (error) {
+      response.status(400).send({ error: 'Unable to parse xlsx' });
+    }
+  });
+};
+
+export { upload, uploadReceptions };
