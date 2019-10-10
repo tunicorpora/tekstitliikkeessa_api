@@ -1,7 +1,7 @@
 import Excel from 'exceljs';
 import tempfile from 'tempfile';
 
-import { getPublicationAndAuthor } from './publications';
+import { getPublicationAndAuthor } from '../utilities';
 import Author from '../models/author';
 import Entry from '../models/entry';
 

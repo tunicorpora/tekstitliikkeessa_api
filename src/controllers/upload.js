@@ -1,12 +1,11 @@
 /* eslint no-restricted-syntax: 0 */
 /* eslint no-await-in-loop: 0 */
 /* eslint no-underscore-dangle: 0 */
-import Mongoose from 'mongoose';
 import formidable from 'formidable';
 import parseXlsx from 'excel';
 
 import Author, { Publication } from '../models/author';
-import { saveLinksRaw, getPublicationAndAuthor } from './publications';
+import { saveLinksRaw } from './publications';
 
 const parseColumns = (colname, val) => {
   const newobj = {};

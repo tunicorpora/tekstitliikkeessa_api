@@ -2,6 +2,8 @@
 /* eslint no-await-in-loop: 0 */
 import Mongoose from 'mongoose';
 import Author from '../models/author';
+import { filterByReceptionType } from '../filters';
+import { getPublicationAndAuthor } from '../utilities';
 
 const getPublications = async (request, response) => {
   const title = new RegExp(request.query.search);
@@ -59,25 +61,6 @@ const getPublicationTitles = async (request, response) => {
       console.log(err);
     }
   });
-};
-
-const getPublicationAndAuthor = async thisId => {
-  try {
-    const author = await Author.findOne({
-      'publications._id': Mongoose.Types.ObjectId(thisId),
-    }).exec();
-    if (!author) {
-      console.log(`No author found, aborting`);
-      return null;
-    }
-    return {
-      publication: author.publications.id(Mongoose.Types.ObjectId(thisId)),
-      author,
-    };
-  } catch (err) {
-    console.log(`unable to retrieve the author of the publication ${thisId}`);
-  }
-  return null;
 };
 
 const saveLinksRaw = async (source, receptions) => {
@@ -140,11 +123,42 @@ const getReceptions = async (request, response) => {
   });
 };
 
+const searchPublications = async (req, resp) => {
+  //const filters = await parseFilters(request);
+  //console.log(filters);
+  try {
+    const result = await Author.aggregate([
+      //{ $match: filters },
+      { $unwind: '$publications' },
+      { $addFields: { 'publications.author': '$name' } },
+      {
+        $group: {
+          _id: 'name',
+          content: { $addToSet: '$publications' },
+        },
+      },
+    ]);
+    console.log(result);
+    const resultCore = result[0].content;
+    const promises = resultCore.map(pub =>
+      filterByReceptionType(pub, ['translations'])
+    );
+    const receptionFilter = await Promise.all(promises).catch(err =>
+      console.log(err)
+    );
+    const filtered = resultCore.filter((_, idx) => receptionFilter[idx]);
+    resp.status(200).send(resultCore);
+  } catch (err) {
+    console.log('error in query');
+    console.log(err);
+  }
+};
+
 export {
   getPublications,
   getPublicationTitles,
   saveLinks,
   saveLinksRaw,
   getReceptions,
-  getPublicationAndAuthor,
+  searchPublications,
 };
