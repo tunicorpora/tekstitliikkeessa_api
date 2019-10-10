@@ -45,7 +45,6 @@ const getPublications = (data, groupingKey) => {
         .map((colname, idx) => parseColumns(colname, row[idx]))
         .filter(rawCol => !Object.keys(rawCol).includes(groupingKey));
       const publication = Object.assign({}, ...colsRaw);
-      publication.tempId = new Mongoose.Types.ObjectId();
       publication.receptions = {
         translations: [],
         adaptations: [],
@@ -128,14 +127,11 @@ const uploadReceptions = (request, response) => {
       const publications = getPublications(data, 'author');
       const receptionData = getReceptionData(publications);
       await extractAuthorsFromPublications(publications);
-      Object.entries(receptionData).forEach(async keyval => {
-        try {
-          saveLinksRaw(keyval[0], keyval[1], true);
-        } catch (err) {
-          console.log('error saving receptions');
-          console.log(err);
-        }
-      });
+      for (const [source, receptions] of Object.entries(receptionData)) {
+        console.log('saving receptions...');
+        await saveLinksRaw(source, receptions, true);
+        console.log('receptions saved');
+      }
     } catch (error) {
       console.log(error);
       response.status(400).send({ error: 'Unable to parse xlsx' });

@@ -1,3 +1,5 @@
+/* eslint no-restricted-syntax: 0 */
+/* eslint no-await-in-loop: 0 */
 import Mongoose from 'mongoose';
 import Author from '../models/author';
 
@@ -61,7 +63,6 @@ const getPublicationTitles = async (request, response) => {
 
 const getPublicationAndAuthor = async thisId => {
   try {
-    console.log('OKK???');
     const author = await Author.findOne({
       'publications._id': Mongoose.Types.ObjectId(thisId),
     }).exec();
@@ -76,9 +77,10 @@ const getPublicationAndAuthor = async thisId => {
   } catch (err) {
     console.log(`unable to retrieve the author of the publication ${thisId}`);
   }
+  return null;
 };
 
-const saveLinksRaw = async (source, receptions, oneWay = false) => {
+const saveLinksRaw = async (source, receptions) => {
   const authorAndPub = await getPublicationAndAuthor(source);
   authorAndPub.publication.set({
     ...authorAndPub.publication,
@@ -89,27 +91,25 @@ const saveLinksRaw = async (source, receptions, oneWay = false) => {
   } catch (err) {
     console.log('Error saving author');
   }
-  if (oneWay) {
-    console.log('one way!');
-  }
-  Object.keys(receptions).forEach(async key => {
-    receptions[key].forEach(async thisId => {
+  for (const [receptionType, receptionIds] of Object.entries(receptions)) {
+    for (const thisId of receptionIds) {
       const authorAndPub2 = await getPublicationAndAuthor(thisId);
-      const rOf = authorAndPub2.publication.receptionOf[key] || [];
+      const rOf = authorAndPub2.publication.receptionOf[receptionType] || [];
       const rOfUpdated = [...new Set([...rOf, source])];
       authorAndPub2.publication.set({
         ...authorAndPub2.publication,
         ...{ receptionOf: rOfUpdated },
       });
-      authorAndPub2.author.save((err, res) => {
-        if (err) {
-          console.log(err.message);
-        } else {
-          console.log('receptionsOf saved.');
-        }
-      });
-    });
-  });
+      try {
+        await authorAndPub2.author.save();
+        console.log('receptionsOf saved.');
+      } catch (err) {
+        console.log('Cant save receptionsOF.');
+        console.log(`sourceid: ${source}`);
+        console.log(err.message);
+      }
+    }
+  }
 };
 
 const saveLinks = async (request, response) => {
