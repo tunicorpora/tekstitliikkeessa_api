@@ -3,7 +3,7 @@
 import Mongoose from 'mongoose';
 import Author from '../models/author';
 import { filterByReceptionType } from '../filters';
-import { getPublicationAndAuthor } from '../utilities';
+import { getPublicationAndAuthor, parseFilters } from '../utilities';
 
 const getPublications = async (request, response) => {
   const title = new RegExp(request.query.search);
@@ -124,21 +124,20 @@ const getReceptions = async (request, response) => {
 };
 
 const searchPublications = async (req, resp) => {
-  //const filters = await parseFilters(request);
-  //console.log(filters);
+  const filters = await parseFilters(req);
+  console.log(filters);
   try {
     const result = await Author.aggregate([
-      //{ $match: filters },
       { $unwind: '$publications' },
+      { $match: filters },
       { $addFields: { 'publications.author': '$name' } },
       {
         $group: {
-          _id: 'name',
+          _id: null,
           content: { $addToSet: '$publications' },
         },
       },
     ]);
-    console.log(result);
     const resultCore = result[0].content;
     const promises = resultCore.map(pub =>
       filterByReceptionType(pub, ['translations'])
@@ -149,8 +148,9 @@ const searchPublications = async (req, resp) => {
     const filtered = resultCore.filter((_, idx) => receptionFilter[idx]);
     resp.status(200).send(resultCore);
   } catch (err) {
-    console.log('error in query');
+    console.log('error in query or no results');
     console.log(err);
+    resp.status(200).send([]);
   }
 };
 
