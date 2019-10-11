@@ -9,12 +9,13 @@ import mongoose from 'mongoose';
 import { editEntry, getEntries, getEntriesAsExcel } from './controllers/entry';
 import { getAuthor, getAuthorNames } from './controllers/author';
 import {
-  getPublicationAndAuthor,
   getPublicationTitles,
   getPublications,
   getReceptions,
   saveLinks,
+  searchPublications,
 } from './controllers/publications';
+import { getPublicationAndAuthor } from './utilities';
 import Author from './models/author';
 import Entry from './models/entry';
 import { upload, uploadReceptions } from './controllers/upload';
@@ -34,11 +35,12 @@ const protectRoute = expressJwt({
 const corsOptions = {
   origin: (origin, callback) => {
     // TODO: DEV only
-    if (process.env.ALLOWED_ORIGINS.split(' ').indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    callback(null, true);
+    //if (process.env.ALLOWED_ORIGINS.split(' ').indexOf(origin) !== -1) {
+    //  callback(null, true);
+    //} else {
+    //  callback(new Error('Not allowed by CORS'));
+    //}
   },
   credentials: true,
 };
@@ -141,6 +143,7 @@ app.get('/author', (request, response) => {
   });
 });
 
+app.get('/search', searchPublications);
 app.put('/entry/:id', protectRoute, editEntry);
 app.get('/entry', getEntries);
 app.get('/receptions/:id', getReceptions);

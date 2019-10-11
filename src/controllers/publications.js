@@ -2,6 +2,8 @@
 /* eslint no-await-in-loop: 0 */
 import Mongoose from 'mongoose';
 import Author from '../models/author';
+import { filterByReceptionType } from '../filters';
+import { getPublicationAndAuthor, parseFilters } from '../utilities';
 
 const getPublications = async (request, response) => {
   const title = new RegExp(request.query.search);
@@ -59,25 +61,6 @@ const getPublicationTitles = async (request, response) => {
       console.log(err);
     }
   });
-};
-
-const getPublicationAndAuthor = async thisId => {
-  try {
-    const author = await Author.findOne({
-      'publications._id': Mongoose.Types.ObjectId(thisId),
-    }).exec();
-    if (!author) {
-      console.log(`No author found, aborting`);
-      return null;
-    }
-    return {
-      publication: author.publications.id(Mongoose.Types.ObjectId(thisId)),
-      author,
-    };
-  } catch (err) {
-    console.log(`unable to retrieve the author of the publication ${thisId}`);
-  }
-  return null;
 };
 
 const saveLinksRaw = async (source, receptions) => {
@@ -140,11 +123,48 @@ const getReceptions = async (request, response) => {
   });
 };
 
+const searchPublications = async (req, resp) => {
+  const filters = await parseFilters(req);
+  // console.log(filters);
+  try {
+    const result = await Author.aggregate([
+      { $unwind: '$publications' },
+      { $addFields: { 'publications.author': '$name' } },
+      { $match: filters },
+      {
+        $group: {
+          _id: null,
+          content: { $addToSet: '$publications' },
+        },
+      },
+    ]);
+    const resultCore = result[0].content;
+    if (req.query.textTypes) {
+      // If text types defined, filter according to them
+      const promises = resultCore.map(pub =>
+        filterByReceptionType(pub, req.query.textTypes.split(','))
+      );
+      const receptionFilter = await Promise.all(promises).catch(err =>
+        console.log(err)
+      );
+      resp
+        .status(200)
+        .send(resultCore.filter((_, idx) => receptionFilter[idx]));
+    } else {
+      resp.status(200).send(resultCore);
+    }
+  } catch (err) {
+    console.log('error in query or no results');
+    console.log(err);
+    resp.status(200).send([]);
+  }
+};
+
 export {
   getPublications,
   getPublicationTitles,
   saveLinks,
   saveLinksRaw,
   getReceptions,
-  getPublicationAndAuthor,
+  searchPublications,
 };

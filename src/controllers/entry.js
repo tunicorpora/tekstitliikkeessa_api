@@ -1,7 +1,7 @@
 import Excel from 'exceljs';
 import tempfile from 'tempfile';
 
-import { getPublicationAndAuthor } from './publications';
+import { getPublicationAndAuthor } from '../utilities';
 import Author from '../models/author';
 import Entry from '../models/entry';
 
@@ -53,8 +53,8 @@ const getEntries = async (request, response) => {
   const filters = await parseFilters(request);
   console.log(filters);
   Author.aggregate([
-    { $match: filters },
     { $unwind: '$publications' },
+    { $match: filters },
     { $group: { _id: null, content: { $addToSet: '$publications' } } },
   ]).then((result, err) => {
     if (!err) {
