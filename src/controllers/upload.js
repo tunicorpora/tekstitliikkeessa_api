@@ -46,14 +46,12 @@ const getPublications = (data, groupingKey) => {
       const publication = Object.assign({}, ...colsRaw);
       publication.receptions = {
         translations: [],
+        reviews: [],
+        articles: [],
         adaptations: [],
         other: [],
       };
-      publication.receptionOf = {
-        translations: [],
-        adaptations: [],
-        other: [],
-      };
+      publication.receptionOf = [];
       if (publications[authorName] === undefined) {
         publications[authorName] = [];
       }
@@ -105,6 +103,8 @@ const getReceptionData = publications =>
       const { target } = curPub;
       const receptions = allPubs[target] || {
         translations: [],
+        reviews: [],
+        articles: [],
         adaptations: [],
         other: [],
       };

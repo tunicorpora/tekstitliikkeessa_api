@@ -125,12 +125,12 @@ const getReceptions = async (request, response) => {
 
 const searchPublications = async (req, resp) => {
   const filters = await parseFilters(req);
-  console.log(filters);
+  // console.log(filters);
   try {
     const result = await Author.aggregate([
       { $unwind: '$publications' },
-      { $match: filters },
       { $addFields: { 'publications.author': '$name' } },
+      { $match: filters },
       {
         $group: {
           _id: null,
@@ -139,14 +139,20 @@ const searchPublications = async (req, resp) => {
       },
     ]);
     const resultCore = result[0].content;
-    const promises = resultCore.map(pub =>
-      filterByReceptionType(pub, ['translations'])
-    );
-    const receptionFilter = await Promise.all(promises).catch(err =>
-      console.log(err)
-    );
-    const filtered = resultCore.filter((_, idx) => receptionFilter[idx]);
-    resp.status(200).send(resultCore);
+    if (req.query.textTypes) {
+      // If text types defined, filter according to them
+      const promises = resultCore.map(pub =>
+        filterByReceptionType(pub, req.query.textTypes.split(','))
+      );
+      const receptionFilter = await Promise.all(promises).catch(err =>
+        console.log(err)
+      );
+      resp
+        .status(200)
+        .send(resultCore.filter((_, idx) => receptionFilter[idx]));
+    } else {
+      resp.status(200).send(resultCore);
+    }
   } catch (err) {
     console.log('error in query or no results');
     console.log(err);

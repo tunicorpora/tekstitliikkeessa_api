@@ -53,8 +53,8 @@ const getEntries = async (request, response) => {
   const filters = await parseFilters(request);
   console.log(filters);
   Author.aggregate([
-    { $match: filters },
     { $unwind: '$publications' },
+    { $match: filters },
     { $group: { _id: null, content: { $addToSet: '$publications' } } },
   ]).then((result, err) => {
     if (!err) {
