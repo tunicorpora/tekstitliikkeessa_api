@@ -7,7 +7,12 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
 import { editEntry, getEntries, getEntriesAsExcel } from './controllers/entry';
-import { getAuthor, getAuthorNames } from './controllers/author';
+import {
+  getAuthor,
+  getAuthorNames,
+  updateAuthor,
+  saveAuthor,
+} from './controllers/author';
 import {
   getPublicationTitles,
   getPublications,
@@ -121,17 +126,8 @@ app.delete('/entry/:id', protectRoute, async (request, response) => {
 // app.post('/upload', protectRoute, Upload);
 app.post('/upload_receptions', uploadReceptions);
 app.post('/upload', upload);
-
-app.post('/author', (request, response) => {
-  const author = new Author({ name: request.body.authorName });
-  author.save((err, savedAuthor) => {
-    if (err) {
-      response.status(400).send({ error: 'Could not save the author' });
-    } else {
-      response.status(200).send(savedAuthor);
-    }
-  });
-});
+app.put('/author', protectRoute, updateAuthor);
+app.post('/author', protectRoute, saveAuthor);
 
 app.get('/author', (request, response) => {
   Author.find({}, (err, authors) => {

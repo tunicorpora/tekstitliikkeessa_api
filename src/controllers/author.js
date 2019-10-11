@@ -50,4 +50,27 @@ const getAuthorTest = (request, response) => {
   });
 };
 
-export { getAuthorNames, getAuthor };
+const updateAuthor = async (request, response) => {
+  const { _id, __v, ...rest } = request.body;
+  try {
+    const res = await Author.updateOne({ _id }, rest);
+    response.status(201).send({ updated: res.nModified });
+  } catch (e) {
+    console.log(e);
+    response.status(400).send({ error: 'Udpate failed' });
+  }
+};
+
+const saveAuthor = async (request, response) => {
+  try {
+    console.log(request.body);
+    const author = new Author({ ...request.body, publications: [] });
+    const saved = await author.save();
+    response.status(200).send({ author_id: saved._id });
+  } catch (e) {
+    console.log(e);
+    response.status(400).send({ error: 'Inserting a new author failed' });
+  }
+};
+
+export { getAuthorNames, getAuthor, updateAuthor, saveAuthor };

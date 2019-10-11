@@ -23,8 +23,17 @@ const publicationSchema = new Schema({
 
 const authorSchema = new Schema({
   name: { type: String, default: '?', unique: true },
+  pseudonyms: { type: String },
+  'other names': { type: String },
+  'year of birth': { type: Number },
+  'year of death': { type: Number },
+  country: { type: String },
+  language: { type: String },
+  'biographical details': { type: String },
+  'professional details': { type: String },
   publications: [publicationSchema],
 });
+
 const Author = model('Author', authorSchema);
 const Publication = model('Publication', publicationSchema);
 export { Publication };
