@@ -18,6 +18,7 @@
     "test:e2e": "npx cucumber-js spec/cucumber/features --require spec/cucumber/steps/index.js --require-module @babel/register"
   },
   "dependencies": {
+    "async": "^2.6.2",
     "body-parser": "^1.18.3",
     "cors": "^2.8.5",
     "excel": "^1.0.0",
@@ -28,6 +29,7 @@
     "formidable": "^1.2.1",
     "jsonwebtoken": "^8.5.0",
     "mongoose": "^5.4.11",
+    "mongoose-findorcreate": "^3.0.0",
     "mongoose-paginate": "^5.0.3",
     "tempfile": "^2.0.0"
   },

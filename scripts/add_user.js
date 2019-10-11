@@ -6,7 +6,10 @@ var _user = _interopRequireDefault(require("../dist/models/user"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const db = _mongoose.default.connect('mongodb://localhost/tekstitliikkeessa', {
+/*
+Usage: node scripts/add_user.js testuser testpw
+*/
+const db = _mongoose.default.connect('mongodb://telimongo:27017/teli', {
   useNewUrlParser: true
 });
 

@@ -1,33 +1,11 @@
+/* eslint no-restricted-syntax: 0 */
+/* eslint no-await-in-loop: 0 */
+/* eslint no-underscore-dangle: 0 */
 import formidable from 'formidable';
 import parseXlsx from 'excel';
-import Entry from '../models/entry';
-import Author from '../models/author';
 
-const collectAuthors = async authorCol => {
-  const collectedAuthors = [];
-  // Grab the column names but expect the first to contain the author
-  // eslint-disable-next-line no-restricted-syntax
-  for (const row of authorCol) {
-    if (collectedAuthors.indexOf(row[0]) === -1) {
-      collectedAuthors.push(row[0]);
-    }
-  }
-
-  // Scan the list of authors and insert new ones if found
-  await Promise.all(
-    collectedAuthors.map(async authorName => {
-      const oldauthor = await Author.findOne({ name: authorName });
-      if (!oldauthor) {
-        const author = await new Author({ name: authorName });
-        await author.save(authorErr => {
-          if (authorErr) {
-            console.log('error saving a new author');
-          }
-        });
-      }
-    })
-  );
-};
+import Author, { Publication } from '../models/author';
+import { saveLinksRaw } from './publications';
 
 const parseColumns = (colname, val) => {
   const newobj = {};
@@ -51,67 +29,113 @@ const parseColumns = (colname, val) => {
   return newobj;
 };
 
-const addColumns = async colnames => {
-  await Entry.findOne({})
-    .select('-_id')
-    .lean()
-    .exec(async (err, res) => {
-      if (res) {
-        const existingCols = Object.keys(res).filter(
-          key => key.indexOf('_') !== 0 && key && key !== 'author'
-        );
-        const newcols = colnames.filter(
-          col => existingCols.indexOf(col) === -1
-        );
-        if (newcols.length) {
-          await Promise.all(
-            newcols.map(async colName => {
-              await Entry.update(
-                {},
-                { $set: { [colName]: '' } },
-                (updateErr, updateRes) => {
-                  if (!updateErr) {
-                    console.log(updateRes);
-                  } else {
-                    console.log(updateErr);
-                  }
-                }
-              );
-            })
-          );
-        }
+const getPublications = (data, groupingKey) => {
+  const colnames = data[0].filter(col => col);
+  const authornameIdx = colnames.findIndex(
+    colname => colname.toLowerCase() === groupingKey
+  );
+  const publications = {};
+  data
+    .slice(1)
+    .filter(row => row.join(''))
+    .forEach(row => {
+      const authorName = row[authornameIdx];
+      const colsRaw = colnames
+        .map((colname, idx) => parseColumns(colname, row[idx]))
+        .filter(rawCol => !Object.keys(rawCol).includes(groupingKey));
+      const publication = Object.assign({}, ...colsRaw);
+      publication.receptions = {
+        translations: [],
+        reviews: [],
+        articles: [],
+        adaptations: [],
+        other: [],
+      };
+      publication.receptionOf = [];
+      if (publications[authorName] === undefined) {
+        publications[authorName] = [];
       }
+      publications[authorName].push(new Publication({ ...publication }));
     });
+  return publications;
 };
 
-export default (request, response) => {
+const extractAuthorsFromPublications = async publications => {
+  for (const keyval of Object.entries(publications)) {
+    const author =
+      (await Author.findOne({ name: keyval[0] }).exec()) ||
+      new Author({
+        name: keyval[0],
+        publications: [],
+      });
+    keyval[1].forEach(pub => author.publications.push(pub));
+    try {
+      const savedAuthor = await author.save();
+      console.log(`author saved (${savedAuthor._id})`);
+    } catch (e) {
+      console.log(`Error saving author ${keyval[0]}: ${e}`);
+    }
+  }
+};
+
+const upload = (request, response) => {
   const form = new formidable.IncomingForm();
   form.parse(request);
-  form.on('file', async (name, file) => {
+  form.on('file', async (_, file) => {
     try {
       parseXlsx(file.path).then(async data => {
-        const colnames = data[0].slice(1).filter(col => col);
-        await collectAuthors(data.slice(1));
-        await addColumns(colnames);
-        // eslint-disable-next-line no-restricted-syntax
-        for (const row of data.slice(1)) {
-          console.log(row);
-          const colsRaw = colnames.map((colname, idx) =>
-            parseColumns(colname, row[idx + 1])
-          );
-          const cols = Object.assign({}, ...colsRaw);
-          // eslint-disable-next-line no-await-in-loop
-          await Entry.addNew({
-            authorName: row[0],
-            ...cols,
-          });
-        }
-        response.status(200).send({ saved: data.length - 1 });
+        const publications = getPublications(data, 'author');
+        await extractAuthorsFromPublications(publications);
+        response.status(200).send({ uploadStatus: { saved: data.length } });
       });
     } catch (error) {
-      console.log(error);
       response.status(400).send({ error: 'Could not process the file' });
+      console.log(`Error processing file.: ${error.message}`);
     }
-    // TODO: add error handling
   });
 };
+
+const getReceptionData = publications =>
+  Object.values(publications)
+    .reduce((prev, cur) => [...prev, ...Object.values(cur)], [])
+    .reduce((allPubs, curPub) => {
+      const rType = `${curPub.reception_type}s`;
+      const { target } = curPub;
+      const receptions = allPubs[target] || {
+        translations: [],
+        reviews: [],
+        articles: [],
+        adaptations: [],
+        other: [],
+      };
+      return {
+        ...allPubs,
+        [target]: {
+          ...receptions,
+          [rType]: [...receptions[rType], curPub._id],
+        },
+      };
+    }, {});
+
+const uploadReceptions = (request, response) => {
+  const form = new formidable.IncomingForm();
+  form.parse(request);
+  form.on('file', async (_, file) => {
+    try {
+      const data = await parseXlsx(file.path).catch(err => console.log(err));
+      const publications = getPublications(data, 'author');
+      const receptionData = getReceptionData(publications);
+      await extractAuthorsFromPublications(publications);
+      for (const [source, receptions] of Object.entries(receptionData)) {
+        console.log('saving receptions...');
+        await saveLinksRaw(source, receptions, true);
+        console.log('receptions saved');
+      }
+    } catch (error) {
+      console.log(error);
+      response.status(400).send({ error: 'Unable to parse xlsx' });
+    }
+  });
+};
+
+export { upload, uploadReceptions };

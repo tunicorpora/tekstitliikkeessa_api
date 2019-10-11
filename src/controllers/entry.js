@@ -1,26 +1,31 @@
 import Excel from 'exceljs';
 import tempfile from 'tempfile';
-import Entry from '../models/entry';
+
+import { getPublicationAndAuthor } from '../utilities';
 import Author from '../models/author';
+import Entry from '../models/entry';
 
 async function parseFilters(request) {
   let filters = {};
   let authorFilter;
+  console.log(request.query.filters);
   if (request.query.filters) {
     const filterparams = JSON.parse(request.query.filters)
       .map(filter => {
-        if (filter.fieldname === 'Toimija') {
-          authorFilter = { val: filter.value, operator: filter.operator };
-          return undefined;
-        }
-        // TODO: conditio type: regex, numerical etc
         switch (filter.operator) {
           case '=':
-            return { [filter.fieldname]: filter.value };
+            return { [`publications.${filter.fieldname}`]: filter.value };
           case '>':
-            return { [filter.fieldname]: { $gt: filter.value * 1 } };
+            return {
+              [`publications.${filter.fieldname}`]: { $gt: filter.value * 1 },
+            };
           default:
-            return { [filter.fieldname]: new RegExp(filter.value, 'i') };
+            return {
+              [`publications.${filter.fieldname}`]: new RegExp(
+                filter.value,
+                'i'
+              ),
+            };
         }
       })
       .filter(f => f !== undefined);
@@ -46,30 +51,46 @@ async function parseFilters(request) {
 
 const getEntries = async (request, response) => {
   const filters = await parseFilters(request);
-  Entry.paginate(filters, {
-    populate: {
-      path: 'author',
-      select: 'name',
-    },
-    page: request.query.page * 1,
-    limit: 50,
-  }).then(result => {
-    const filteredEntries = {
-      data: result.docs.map(doc => {
-        if (doc.author == null) {
-          return { ...doc, author: { name: '', _id: '' } };
-        }
-        return doc;
-      }),
-      meta: {
-        total: result.total,
-        page: result.page,
-        pages: result.pages,
-        showing: result.docs.length,
-      },
-    };
-    response.status(200).send(filteredEntries);
+  console.log(filters);
+  Author.aggregate([
+    { $unwind: '$publications' },
+    { $match: filters },
+    { $group: { _id: null, content: { $addToSet: '$publications' } } },
+  ]).then((result, err) => {
+    if (!err) {
+      if (result[0]) {
+        response.status(200).send(result[0].content);
+      } else {
+        response.status(200).send([]);
+      }
+    } else {
+      console.log(err);
+    }
   });
+  // Entry.paginate(filters, {
+  //   populate: {
+  //     path: 'author',
+  //     select: 'name',
+  //   },
+  //   page: request.query.page * 1,
+  //   limit: 50,
+  // }).then(result => {
+  //   const filteredEntries = {
+  //     data: result.docs.map(doc => {
+  //       if (doc.author == null) {
+  //         return { ...doc, author: { name: '', _id: '' } };
+  //       }
+  //       return doc;
+  //     }),
+  //     meta: {
+  //       total: result.total,
+  //       page: result.page,
+  //       pages: result.pages,
+  //       showing: result.docs.length,
+  //     },
+  //   };
+  //    response.status(200).send(filteredEntries);
+  //  });
 };
 
 const getEntriesAsExcel = async (request, response) => {
@@ -123,4 +144,21 @@ const getEntriesAsExcel = async (request, response) => {
     });
 };
 
-export { getEntries, getEntriesAsExcel };
+const editEntry = async (request, response) => {
+  const { id } = request.params;
+  const pub = await getPublicationAndAuthor(id);
+  pub.publication.set({
+    ...pub.publication,
+    ...request.body,
+  });
+  pub.author.save(err => {
+    if (err) {
+      console.log(err.message);
+    } else {
+      response.status(200).send({ status: 'ok' });
+      console.log('edits saved.');
+    }
+  });
+};
+
+export { getEntries, getEntriesAsExcel, editEntry };
