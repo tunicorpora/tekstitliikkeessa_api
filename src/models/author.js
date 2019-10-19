@@ -21,8 +21,9 @@ const publicationSchema = new Schema({
   receptionOf: { type: Array },
 });
 
+
 const authorSchema = new Schema({
-  name: { type: String, default: '?', unique: true },
+  name: { type: String, default: '?', sparse: true },
   pseudonyms: { type: String },
   'other names': { type: String },
   'year of birth': { type: Number },

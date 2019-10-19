@@ -13,6 +13,16 @@ const getAuthorNames = (request, response) => {
     });
 };
 
+const getAuthors = (_, response) => {
+  Author.find({}, (err, authors) => {
+    if (err) {
+      response.status(400).send({ error: 'cannot get a list of authors' });
+    } else {
+      response.status(200).send(authors);
+    }
+  });
+};
+
 const getAuthor = (request, response) => {
   const { name } = request.params;
   Author.findOne({ name }, (err, res) => {
@@ -21,31 +31,6 @@ const getAuthor = (request, response) => {
       response.status(400).send({ error: 'Cannot get author' });
     } else {
       response.status(201).send(res);
-    }
-  });
-};
-
-const getAuthorTest = (request, response) => {
-  const { name } = request.params;
-  Author.findOne({ name }, async (err, res) => {
-    if (err) {
-      console.log(err);
-      response.status(400).send({ error: 'Cannot get author' });
-    } else {
-      const { publications } = res;
-      if (Array.isArray(publications)) {
-        publications.forEach(pub => {
-          const { receptions } = pub;
-          Object.keys(receptions).forEach(key => {
-            if (Array.isArray(receptions[key])) {
-              receptions[key].forEach(reception => {
-                console.log(reception);
-              });
-            }
-          });
-        });
-        response.status(201).send(res);
-      }
     }
   });
 };
@@ -73,4 +58,21 @@ const saveAuthor = async (request, response) => {
   }
 };
 
-export { getAuthorNames, getAuthor, updateAuthor, saveAuthor };
+const deleteAuthor = async (_, response) => {
+  Author.deleteMany({}, err => {
+    if (err) {
+      console.log(err);
+      response.status(400).send({ error: 'unable to delete' });
+    }
+    response.status(200).send({ status: 'succesfully deleted' });
+  });
+};
+
+export {
+  getAuthorNames,
+  getAuthor,
+  updateAuthor,
+  saveAuthor,
+  getAuthors,
+  deleteAuthor,
+};
