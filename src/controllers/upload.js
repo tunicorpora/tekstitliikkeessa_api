@@ -60,24 +60,6 @@ const getPublications = (data, groupingKey) => {
   return publications;
 };
 
-const extractAuthorsFromPublications = async publications => {
-  for (const keyval of Object.entries(publications)) {
-    const author =
-      (await Author.findOne({ name: keyval[0] }).exec()) ||
-      new Author({
-        name: keyval[0],
-        publications: [],
-      });
-    keyval[1].forEach(pub => author.publications.push(pub));
-    try {
-      const savedAuthor = await author.save();
-      console.log(`author saved (${savedAuthor._id})`);
-    } catch (e) {
-      console.log(`Error saving author ${keyval[0]}: ${e}`);
-    }
-  }
-};
-
 const upload = (request, response) => {
   const form = new formidable.IncomingForm();
   form.parse(request);
@@ -91,49 +73,6 @@ const upload = (request, response) => {
     } catch (error) {
       response.status(400).send({ error: 'Could not process the file' });
       console.log(`Error processing file.: ${error.message}`);
-    }
-  });
-};
-
-const getReceptionData = publications =>
-  Object.values(publications)
-    .reduce((prev, cur) => [...prev, ...Object.values(cur)], [])
-    .reduce((allPubs, curPub) => {
-      const rType = `${curPub.reception_type}s`;
-      const { target } = curPub;
-      const receptions = allPubs[target] || {
-        translations: [],
-        reviews: [],
-        articles: [],
-        adaptations: [],
-        other: [],
-      };
-      return {
-        ...allPubs,
-        [target]: {
-          ...receptions,
-          [rType]: [...receptions[rType], curPub._id],
-        },
-      };
-    }, {});
-
-const uploadReceptions = (request, response) => {
-  const form = new formidable.IncomingForm();
-  form.parse(request);
-  form.on('file', async (_, file) => {
-    try {
-      const data = await parseXlsx(file.path).catch(err => console.log(err));
-      const publications = getPublications(data, 'author');
-      const receptionData = getReceptionData(publications);
-      await extractAuthorsFromPublications(publications);
-      for (const [source, receptions] of Object.entries(receptionData)) {
-        console.log('saving receptions...');
-        await saveLinksRaw(source, receptions, true);
-        console.log('receptions saved');
-      }
-    } catch (error) {
-      console.log(error);
-      response.status(400).send({ error: 'Unable to parse xlsx' });
     }
   });
 };
