@@ -86,11 +86,32 @@ const upload = (request, response) => {
   form.parse(request);
   form.on('file', async (_, file) => {
     try {
-      parseXlsx(file.path).then(async data => {
-        const publications = extractPublications(data, 'author');
-        await extractAuthorsFromPublications(publications);
-        response.status(200).send({ uploadStatus: { saved: data.length } });
-      });
+      parseXlsx(file.path)
+        .then(async data => {
+          const publications = extractPublications(data, 'author');
+          await extractAuthorsFromPublications(publications);
+          const ids = [
+            ...Object.values(publications).reduce(
+              (prev, cur) => [
+                ...prev,
+                ...cur.map(p => ({
+                  title: p.title,
+                  id: p._id,
+                })),
+              ],
+              []
+            ),
+          ];
+          response.status(200).send({
+            uploadStatus: {
+              saved: ids,
+            },
+          });
+        })
+        .catch(err => {
+          console.log(err);
+          response.status(400).send({ error: 'Could not read the file' });
+        });
     } catch (error) {
       response.status(400).send({ error: 'Could not process the file' });
       console.log(`Error processing file.: ${error.message}`);
@@ -98,4 +119,48 @@ const upload = (request, response) => {
   });
 };
 
-export { searchPublications, deletePublication, editPublication, upload };
+const getPublication = async (request, response) => {
+  const title = new RegExp(request.query.search);
+  const { id } = request.params;
+  const condition = id
+    ? { $match: { 'publications._id': Mongoose.Types.ObjectId(id) } }
+    : { $match: { 'publications.title': { $regex: title } } };
+  Author.aggregate([
+    condition,
+    { $unwind: '$publications' },
+    {
+      $group: {
+        _id: '$name',
+        publications: { $addToSet: '$publications' },
+      },
+    },
+  ]).then((result, err) => {
+    if (!err) {
+      if (result) {
+        const mapped = [];
+        result.forEach(res =>
+          res.publications.forEach(pub => {
+            if (title.test(pub.title)) {
+              mapped.push({ author: res._id, ...pub });
+            }
+          })
+        );
+        response
+          .status(200)
+          .send(id ? mapped.find(pub => pub._id == id) : mapped);
+      } else {
+        response.status(200).send([]);
+      }
+    } else {
+      console.log(err);
+    }
+  });
+};
+
+export {
+  searchPublications,
+  deletePublication,
+  editPublication,
+  upload,
+  getPublication,
+};

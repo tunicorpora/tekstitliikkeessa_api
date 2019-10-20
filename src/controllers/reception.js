@@ -85,6 +85,7 @@ const uploadReceptions = (request, response) => {
         await saveLinksRaw(source, receptions, true);
         console.log('receptions saved');
       }
+      response.status(200).send({ uploadStatus: 'receptions ok' });
     } catch (error) {
       console.log(error);
       response.status(400).send({ error: 'Unable to parse xlsx' });

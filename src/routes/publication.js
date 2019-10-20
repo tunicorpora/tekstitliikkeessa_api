@@ -3,6 +3,7 @@ import {
   deletePublication,
   searchPublications,
   editPublication,
+  getPublication,
   upload,
 } from '../controllers/publication';
 import { protectRoute } from '../controllers/auth';
@@ -12,8 +13,11 @@ const router = express.Router();
 router
   .route('/publication')
   .get(searchPublications)
-  .post(protectRoute, upload)
-  .delete(protectRoute, deletePublication)
-  .put(protectRoute, editPublication);
+  .post(protectRoute, upload);
+router
+  .route('/publication/:id')
+  .get(getPublication)
+  .put(protectRoute, editPublication)
+  .delete(protectRoute, deletePublication);
 
 export default router;
