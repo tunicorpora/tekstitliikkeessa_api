@@ -2,28 +2,18 @@
 /* eslint no-restricted-syntax: 0 */
 /* eslint no-await-in-loop: 0 */
 
+import moment from 'moment';
 import Author from './models/author';
-import Publication from './models/entry'
+import Publication from './models/entry';
 
 const parseColumns = (colname, val) => {
   const newobj = {};
   newobj[colname] = val.trim();
-  /*
-            if (colname === 'Julkaisupv') {
-              // Treat certain  cols as  dates
-              const val = row[idx + 1];
-              let thisdate;
-              if (val * 1 < 2026 && val * 1 > 1100) {
-                thisdate = new Date(val);
-              } else if (val * 1 > 2026) {
-                thisdate = new Date((val - (25567 + 1)) * 86400 * 1000);
-              } else {
-                thisdate = null;
-              }
-              console.log(thisdate);
-              newobj[colname] = thisdate;
-            }
-          */
+  if (colname === 'date') {
+    // Validate the date
+    const dateAsMoment = moment(val, 'DD.MM.YYYY');
+    newobj[colname] = dateAsMoment.isValid() ? dateAsMoment : '';
+  }
   return newobj;
 };
 
