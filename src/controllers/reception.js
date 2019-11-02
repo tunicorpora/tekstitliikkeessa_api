@@ -24,6 +24,8 @@ const saveLinksRaw = async (source, receptions) => {
   }
   for (const [receptionType, receptionIds] of Object.entries(receptions)) {
     for (const thisId of receptionIds) {
+      console.log('HEIII');
+      console.log(thisId);
       const authorAndPub2 = await getPublicationAndAuthor(thisId);
       const rOf = authorAndPub2.publication.receptionOf[receptionType] || [];
       const rOfUpdated = [...new Set([...rOf, source])];
@@ -80,6 +82,7 @@ const uploadReceptions = (request, response) => {
       const publications = extractPublications(data, 'author');
       const receptionData = getReceptionData(publications);
       await extractAuthorsFromPublications(publications);
+      console.log(receptionData);
       for (const [source, receptions] of Object.entries(receptionData)) {
         console.log('saving receptions...');
         await saveLinksRaw(source, receptions, true);

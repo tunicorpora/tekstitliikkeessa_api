@@ -5,6 +5,7 @@ import {
   editPublication,
   getPublication,
   upload,
+  uploadSingle,
 } from '../controllers/publication';
 import { protectRoute } from '../controllers/auth';
 
@@ -20,5 +21,6 @@ router
   .put(protectRoute, editPublication)
   .delete(protectRoute, deletePublication);
 router.route('/searchpublication').get(getPublication);
+router.route('/singlepublication').post(uploadSingle);
 
 export default router;

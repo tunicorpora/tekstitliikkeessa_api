@@ -1,13 +1,19 @@
+/* eslint-disable no-underscore-dangle */
+/* eslint no-restricted-syntax: 0 */
+/* eslint no-await-in-loop: 0 */
 import Mongoose from 'mongoose';
 import formidable from 'formidable';
 import parseXlsx from 'excel';
 import Author from '../models/author';
+import Publication from '../models/entry';
 import { filterByReceptionType } from '../filters';
 import { getPublicationAndAuthor, parseFilters } from '../utilities';
 import {
   extractAuthorsFromPublications,
   extractPublications,
+  getReceptionData,
 } from '../excelUtilities';
+import { saveLinksRaw } from './reception';
 
 const searchPublications = async (req, resp) => {
   const filters = await parseFilters(req);
@@ -80,6 +86,50 @@ const editPublication = async (request, response) => {
   });
 };
 
+const getPublicationIdsAndTitles = publications => {
+  return [
+    ...Object.values(publications).reduce(
+      (prev, cur) => [
+        ...prev,
+        ...cur.map(p => ({
+          title: p.title,
+          id: p._id,
+        })),
+      ],
+      []
+    ),
+  ];
+};
+
+const uploadSingle = async (request, response) => {
+  const { publication: publicationRaw, type } = request.body;
+  const { author, ...publication } = publicationRaw;
+  publication.receptions = {
+    translations: [],
+    reviews: [],
+    articles: [],
+    adaptations: [],
+    other: [],
+  };
+  const publicationData = { [author]: [new Publication({ ...publication })] };
+  await extractAuthorsFromPublications(publicationData);
+  if (type === 'reception') {
+    const receptionData = getReceptionData(publicationData);
+    for (const [source, receptions] of Object.entries(receptionData)) {
+      console.log(source);
+      console.log(receptions);
+      await saveLinksRaw(source, receptions, true);
+    }
+  }
+  const idsAndTitles = getPublicationIdsAndTitles(publicationData);
+  response.status(200).send({
+    uploadStatus: {
+      saved: idsAndTitles,
+    },
+  });
+  response.status(201);
+};
+
 const upload = (request, response) => {
   const form = new formidable.IncomingForm();
   form.parse(request);
@@ -89,21 +139,10 @@ const upload = (request, response) => {
         .then(async data => {
           const publications = extractPublications(data, 'author');
           await extractAuthorsFromPublications(publications);
-          const ids = [
-            ...Object.values(publications).reduce(
-              (prev, cur) => [
-                ...prev,
-                ...cur.map(p => ({
-                  title: p.title,
-                  id: p._id,
-                })),
-              ],
-              []
-            ),
-          ];
+          const idsAndTitles = getPublicationIdsAndTitles(publications);
           response.status(200).send({
             uploadStatus: {
-              saved: ids,
+              saved: idsAndTitles,
             },
           });
         })
@@ -162,4 +201,5 @@ export {
   editPublication,
   upload,
   getPublication,
+  uploadSingle,
 };

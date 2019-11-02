@@ -48,15 +48,15 @@ const extractPublications = (data, groupingKey) => {
   return publications;
 };
 
-const extractAuthorsFromPublications = async publications => {
-  for (const keyval of Object.entries(publications)) {
+const extractAuthorsFromPublications = async publicationData => {
+  for (const [name, publications] of Object.entries(publicationData)) {
     const author =
-      (await Author.findOne({ name: keyval[0] }).exec()) ||
+      (await Author.findOne({ name }).exec()) ||
       new Author({
-        name: keyval[0],
+        name,
         publications: [],
       });
-    keyval[1].forEach(pub => author.publications.push(pub));
+    publications.forEach(pub => author.publications.push(pub));
     try {
       const savedAuthor = await author.save();
       console.log(`author saved (${savedAuthor._id})`);
