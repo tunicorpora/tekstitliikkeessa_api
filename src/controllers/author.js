@@ -1,7 +1,7 @@
 import Author from '../models/author';
 
 const getAuthorNames = (request, response) => {
-  Author.find({ name: { $regex: new RegExp(request.query.search) } })
+  Author.find({ name: { $regex: new RegExp(request.query.search, 'i') } })
     .select('name -_id')
     .exec((err, res) => {
       if (err) {

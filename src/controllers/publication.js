@@ -119,7 +119,7 @@ const upload = (request, response) => {
 };
 
 const getPublication = async (request, response) => {
-  const title = new RegExp(request.query.search);
+  const title = new RegExp(request.query.search, 'i');
   const { id } = request.params;
   const condition = id
     ? { $match: { 'publications._id': Mongoose.Types.ObjectId(id) } }
