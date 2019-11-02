@@ -11,7 +11,6 @@ import {
 
 const searchPublications = async (req, resp) => {
   const filters = await parseFilters(req);
-  console.log(filters);
   try {
     const result = await Author.aggregate([
       { $unwind: '$publications' },

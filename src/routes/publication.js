@@ -19,5 +19,6 @@ router
   .get(getPublication)
   .put(protectRoute, editPublication)
   .delete(protectRoute, deletePublication);
+router.route('/searchpublication').get(getPublication);
 
 export default router;
