@@ -6,6 +6,7 @@ import {
   saveAuthor,
   deleteAuthor,
   getAuthorNames,
+  deleteSingleAuthor,
 } from '../controllers/author';
 import { protectRoute } from '../controllers/auth';
 
@@ -19,6 +20,7 @@ router
   .delete(protectRoute, deleteAuthor);
 
 router.route('/author/:name').get(getAuthor);
+router.route('/author/:id').delete(deleteSingleAuthor);
 router.route('/authornames').get(getAuthorNames);
 
 export default router;

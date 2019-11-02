@@ -48,7 +48,6 @@ const updateAuthor = async (request, response) => {
 
 const saveAuthor = async (request, response) => {
   try {
-    console.log(request.body);
     const author = new Author({ ...request.body, publications: [] });
     const saved = await author.save();
     response.status(200).send({ author_id: saved._id });
@@ -68,6 +67,17 @@ const deleteAuthor = async (_, response) => {
   });
 };
 
+const deleteSingleAuthor = async (request, response) => {
+  const { id } = request.params;
+  Author.deleteOne({ _id: id }, err => {
+    if (err) {
+      console.log(err);
+      response.status(400).send({ error: 'unable to delete' });
+    }
+    response.status(200).send({ status: 'succesfully deleted' });
+  });
+};
+
 export {
   getAuthorNames,
   getAuthor,
@@ -75,4 +85,5 @@ export {
   saveAuthor,
   getAuthors,
   deleteAuthor,
+  deleteSingleAuthor,
 };
