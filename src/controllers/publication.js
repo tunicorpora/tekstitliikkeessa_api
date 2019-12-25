@@ -51,22 +51,52 @@ const searchPublications = async (req, resp) => {
   }
 };
 
-const deletePublication = async (request, response) => {
-  const authorAndPub = await getPublicationAndAuthor(request.params.id);
+/**
+ * deletePublicationRaw delete a single publication
+ *
+ * @param authorAndPub object containing author and publication
+ * @returns {undefined}
+ */
+const deletePublicationRaw = async authorAndPub => {
   if (authorAndPub.author) {
     await authorAndPub.publication.remove();
-    authorAndPub.author.save(err => {
-      if (err) {
-        console.log('error deleting');
-        response.status(400).send({ status: 'error deleting' });
-        // console.log(err.message);
-      } else {
-        response.status(200).send({ status: 'ok' });
-        console.log('deleted');
-      }
-    });
+    try {
+      await authorAndPub.author.save();
+    } catch (e) {
+      console.log('error deleting');
+      return false;
+    }
   }
-  // TODO: add error handling
+  return true;
+};
+
+const deletePublication = async (request, response) => {
+  const authorAndPub = await getPublicationAndAuthor(request.params.id);
+  const deleteSuccess = await deletePublicationRaw(authorAndPub);
+  if (!deleteSuccess) {
+    console.log('error deleting');
+    response.status(400).send({ status: 'error deleting' });
+  } else {
+    response.status(200).send({ status: 'ok' });
+  }
+};
+
+const batchDeletePublication = async (request, response) => {
+  const { ids } = request.query;
+  // TODO: when removing receptions, remove the link, too?!?!?
+  const deleteSuccesses = await Promise.all(
+    ids.split(',').map(async id => {
+      try {
+        const authorAndPub = await getPublicationAndAuthor(id);
+        return deletePublicationRaw(authorAndPub);
+      } catch (e) {
+        console.info('problem with ids');
+      }
+      return false;
+    })
+  );
+  console.log(deleteSuccesses);
+  response.status(200).send({ status: 'ok' });
 };
 
 const editPublication = async (request, response) => {
@@ -202,4 +232,5 @@ export {
   upload,
   getPublication,
   uploadSingle,
+  batchDeletePublication,
 };

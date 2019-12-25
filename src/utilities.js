@@ -46,6 +46,7 @@ async function parseFilters(request) {
 
 const getPublicationAndAuthor = async thisId => {
   try {
+    console.info(thisId)
     const author = await Author.findOne({
       'publications._id': Mongoose.Types.ObjectId(thisId),
     }).exec();

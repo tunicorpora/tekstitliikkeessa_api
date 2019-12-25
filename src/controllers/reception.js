@@ -11,21 +11,40 @@ import {
 } from '../excelUtilities';
 import { getPublicationAndAuthor } from '../utilities';
 
-const saveLinksRaw = async (source, receptions) => {
+/**
+ * async
+ *
+ * @param source
+ * @param receptions
+ * @param replace {boolean}  replace the previous links or append?
+ * @returns {undefined}
+ */
+const saveLinksRaw = async (source, receptions, replace) => {
   const authorAndPub = await getPublicationAndAuthor(source);
+  const newReceptions = replace
+    ? receptions
+    : Object.entries(receptions).reduce(
+        (prev, [receptionType, receptionsByType]) => ({
+          ...prev,
+          [receptionType]: [
+            ...authorAndPub.publication.receptions[receptionType],
+            ...receptionsByType,
+          ],
+        }),
+        authorAndPub.publication.receptions
+      );
   authorAndPub.publication.set({
     ...authorAndPub.publication,
-    ...{ receptions },
+    receptions: newReceptions,
   });
   try {
-    await authorAndPub.author.save();
+    const res = await authorAndPub.author.save();
   } catch (err) {
     console.log('Error saving author');
   }
+  // TODO::make sure not overwriting here
   for (const [receptionType, receptionIds] of Object.entries(receptions)) {
     for (const thisId of receptionIds) {
-      console.log('HEIII');
-      console.log(thisId);
       const authorAndPub2 = await getPublicationAndAuthor(thisId);
       const rOf = authorAndPub2.publication.receptionOf[receptionType] || [];
       const rOfUpdated = [...new Set([...rOf, source])];
@@ -35,7 +54,6 @@ const saveLinksRaw = async (source, receptions) => {
       });
       try {
         await authorAndPub2.author.save();
-        console.log('receptionsOf saved.');
       } catch (err) {
         console.log('Cant save receptionsOF.');
         console.log(`sourceid: ${source}`);
@@ -48,20 +66,23 @@ const saveLinksRaw = async (source, receptions) => {
 const saveLinks = async request => {
   const { body } = request;
   const { source, receptions } = body;
-  saveLinksRaw(source, receptions);
+  saveLinksRaw(source, receptions, true);
 };
 
 const getReceptions = async (request, response) => {
   const { id } = request.params;
+  console.info('haloo');
   const pub = await getPublicationAndAuthor(id);
   let promises = [];
   Object.keys(pub.publication.receptions).forEach(key => {
-    promises = [
-      ...promises,
-      ...pub.publication.receptions[key].map(trId =>
-        getPublicationAndAuthor(trId)
-      ),
-    ];
+    if (Array.isArray(pub.publication.receptions[key])) {
+      promises = [
+        ...promises,
+        ...pub.publication.receptions[key].map(trId =>
+          getPublicationAndAuthor(trId)
+        ),
+      ];
+    }
   });
   Promise.all(promises).then(values => {
     response.status(201).send(
@@ -81,16 +102,19 @@ const uploadReceptions = (request, response) => {
       const data = await parseXlsx(file.path).catch(err => console.log(err));
       const publications = extractPublications(data, 'author');
       const receptionData = getReceptionData(publications);
+      console.log('TRYYY!!!');
       await extractAuthorsFromPublications(publications);
+      console.log('TRIED');
       console.log(receptionData);
       for (const [source, receptions] of Object.entries(receptionData)) {
         console.log('saving receptions...');
-        await saveLinksRaw(source, receptions, true);
+        await saveLinksRaw(source, receptions, false);
         console.log('receptions saved');
       }
       response.status(200).send({ uploadStatus: 'receptions ok' });
     } catch (error) {
-      console.log(error);
+      console.log('FAILED');
+      //console.log(error);
       response.status(400).send({ error: 'Unable to parse xlsx' });
     }
   });
