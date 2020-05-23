@@ -27,7 +27,8 @@ const extractPublications = (data, groupingKey) => {
     .slice(1)
     .filter(row => row.join(''))
     .forEach(row => {
-      const authorName = row[authornameIdx];
+      const authorName = row[authornameIdx].trim();
+      console.log(`>>${authorName}<<`);
       const colsRaw = colnames
         .map((colname, idx) => parseColumns(colname, row[idx]))
         .filter(rawCol => !Object.keys(rawCol).includes(groupingKey));

@@ -71,7 +71,6 @@ const saveLinks = async request => {
 
 const getReceptions = async (request, response) => {
   const { id } = request.params;
-  console.info('haloo');
   const pub = await getPublicationAndAuthor(id);
   let promises = [];
   Object.keys(pub.publication.receptions).forEach(key => {
