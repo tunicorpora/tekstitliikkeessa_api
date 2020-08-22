@@ -15,6 +15,7 @@ const publicationSchema = new Schema({
   date: { type: Date },
   reference: { type: String },
   note: { type: String },
+  link: { type: String },
   reception_type: { type: String }, // Just for importing receptions from excel
   target: { type: String }, // Just for importing receptions from excel
   receptions: { type: Object },
