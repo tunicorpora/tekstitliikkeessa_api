@@ -3810,7 +3810,7 @@ mongoose-paginate@^5.0.3:
   dependencies:
     bluebird "3.0.5"
 
-mongoose@^5.4.11:
+mongoose@^5.7.5:
   version "5.7.5"
   resolved "https://registry.yarnpkg.com/mongoose/-/mongoose-5.7.5.tgz#b787b47216edf62036aa358c3ef0f1869c46cdc2"
   integrity sha512-BZ4FxtnbTurc/wcm/hLltLdI4IDxo4nsE0D9q58YymTdZwreNzwO62CcjVtaHhmr8HmJtOInp2W/T12FZaMf8g==
