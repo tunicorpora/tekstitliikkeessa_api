@@ -9,18 +9,30 @@ async function parseFilters(request) {
       .map(filter => {
         switch (filter.operator) {
           case '=':
-            return { [`publications.${filter.fieldname}`]: filter.value };
+            return filter.fieldname !== 'year'
+              ? { [`publications.${filter.fieldname}`]: filter.value }
+              : {
+                  [`publications.${filter.fieldname}`]: filter.value * 1,
+                };
           case '>':
             return {
               [`publications.${filter.fieldname}`]: { $gt: filter.value * 1 },
             };
-          default:
+          case '<':
             return {
-              [`publications.${filter.fieldname}`]: new RegExp(
-                filter.value,
-                'i'
-              ),
+              [`publications.${filter.fieldname}`]: { $lt: filter.value * 1 },
             };
+          default:
+            return filter.fieldname !== 'year'
+              ? {
+                  [`publications.${filter.fieldname}`]: new RegExp(
+                    filter.value,
+                    'i'
+                  ),
+                }
+              : {
+                  [`publications.${filter.fieldname}`]: filter.value * 1,
+                };
         }
       })
       .filter(f => f !== undefined);
@@ -46,7 +58,7 @@ async function parseFilters(request) {
 
 const getPublicationAndAuthor = async thisId => {
   try {
-    console.info(thisId)
+    console.info(thisId);
     const author = await Author.findOne({
       'publications._id': Mongoose.Types.ObjectId(thisId),
     }).exec();
